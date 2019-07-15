@@ -1,0 +1,6 @@
+[submodule "photonic"]
+	path = photonic
+	url = https://github.com/longhorn-rocketry/photonic
+[submodule "aimbot"]
+	path = aimbot
+	url = https://github.com/longhorn-rocketry/aimbot
