@@ -35,21 +35,20 @@ MAKE_RECIPE_STEM = "g++ " + " ".join(MAKE_FLAGS) + " " +                       \
 makefile = open("Makefile", "w")
 
 
-def append_src(root, fname):
-    makefile.write(" \\\n\t" + osp.join(root, fname))
+def append_src(path):
+    makefile.write(" \\\n\t" + path)
 
-def append_include(root, dirname):
-    makefile.write(" \\\n\t-I" + osp.join(root, dirname))
+def append_include(path):
+    makefile.write(" \\\n\t-I" + path)
 
-def judge(root, fname, dir=False):
-    path = osp.join(root, fname)
+def judge(path, dir=False):
     fstem, fext = os.path.splitext(path)
 
     # File-only inclusion rules
     if not dir:
         if fext not in MAKE_SOURCE_EXTENSIONS:
             return
-        elif fname == MAKE_MAIN_NAME:
+        elif MAKE_MAIN_NAME in path:
             return
 
     blacklisted = False
@@ -60,9 +59,9 @@ def judge(root, fname, dir=False):
             return
 
     if dir:
-        append_include(root, fname)
+        append_include(path)
     else:
-        append_src(root, fname)
+        append_src(path)
 
 
 # Main recipe
@@ -73,10 +72,12 @@ makefile.write("\t" + MAKE_RECIPE_STEM)
 for srcroot in MAKE_SOURCE_ROOTS:
     for root, dirs, files in os.walk(srcroot):
         for file in files:
-            judge(root, file)
+            judge(osp.join(root, file))
 
         for dir in dirs:
-            judge(root, dir, True)
+            judge(osp.join(root, dir), True)
+
+    append_include(srcroot)
 
 # Cleanup macro
 makefile.write("\n\nmake clean:\n\trm " + MAKE_RECIPE_NAME)
