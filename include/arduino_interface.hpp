@@ -1,0 +1,8 @@
+#ifndef FLIGHT_FACTORY_ARDUINO_INTERFACE_HPP
+#define FLIGHT_FACTORY_ARDUINO_INTERFACE_HPP
+
+void setup();
+
+void run();
+
+#endif

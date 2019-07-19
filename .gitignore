@@ -1,3 +1,6 @@
 # Binaries and makefiles
 ff
 Makefile
+
+# Flight computer sourcecode
+avsw/

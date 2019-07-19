@@ -1,5 +1,12 @@
 import os
 import os.path as osp
+import shutil
+import sys
+
+
+if len(sys.argv) < 2:
+    print("Usage: make.py <path to sketch>")
+    sys.exit(0)
 
 
 REPOSITORY_ROOT = os.getcwd()
@@ -9,37 +16,57 @@ PHOTONIC_ROOT = osp.join(REPOSITORY_ROOT, "photonic")
 INCLUDE_ROOT = osp.join(REPOSITORY_ROOT, "include")
 SRC_ROOT = osp.join(REPOSITORY_ROOT, "src")
 
+SKETCH_EXTENSION = ".ino"
+
 MAKE_SOURCE_ROOTS = [
     AIMBOT_ROOT,
     PHOTONIC_ROOT,
     INCLUDE_ROOT,
-    SRC_ROOT
+    SRC_ROOT,
+    sys.argv[1]
 ]
 MAKE_SOURCE_EXTENSIONS = [
     ".cpp",
     ".cc",
     ".hpp",
-    ".h"
+    ".h",
+    SKETCH_EXTENSION
 ]
 MAKE_SUBSTRING_BLACKLIST = [
     "utest",
     "legacy"
 ]
 MAKE_RECIPE_NAME = "ff"
-MAKE_MAIN_NAME = "flight_factory.cpp"
+MAKE_MAIN_NAME = "main.cpp"
 MAKE_FLAGS = ["-std=c++11"]
 MAKE_RECIPE_STEM = "g++ " + " ".join(MAKE_FLAGS) + " " +                       \
                    osp.join(SRC_ROOT, MAKE_MAIN_NAME) +                        \
                    " -o " + MAKE_RECIPE_NAME
 
 makefile = open("Makefile", "w")
+source_master_list = []
 
 
 def append_src(path):
+
+    # Give sketch files a .cpp extension so gcc doesn't complain
+    if SKETCH_EXTENSION in path:
+        path_new = path.replace(SKETCH_EXTENSION, ".cpp")
+        shutil.copyfile(path, path_new)
+        path = path_new
+
+    # Prevent duplicates
+    if path in source_master_list:
+        return
+
+    source_master_list.append(path)
+
     makefile.write(" \\\n\t" + path)
+
 
 def append_include(path):
     makefile.write(" \\\n\t-I" + path)
+
 
 def judge(path, dir=False):
     fstem, fext = os.path.splitext(path)
@@ -81,5 +108,7 @@ for srcroot in MAKE_SOURCE_ROOTS:
 
 # Cleanup macro
 makefile.write("\n\nmake clean:\n\trm " + MAKE_RECIPE_NAME)
+
+print(source_master_list)
 
 makefile.close()
