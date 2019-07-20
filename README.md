@@ -48,7 +48,7 @@ git submodule update --recursive --remote
 Projects are built with make. The `make.py` script will automatically
 generate a makefile from the contents of submodules and the `src` and `include`
 directories. This search is recursive. The project entrypoint must be within
-`src/flight_factory.cpp`.
+`src/main.cpp`.
 
 The makefile must be generated anew when adding new source files.
 
@@ -63,14 +63,17 @@ folder as well.
 Then, build and run.
 
 ```
-make clean; make ff; ./ff
+make clean; make ff; ./ff /path/to/config
 ```
+
+The configuration file contains parameters for the simulation and the rocket
+being simulated. Writing these files is covered further down.
 
 Alternatively, `fly.sh` will do all of the above for you. This is your go-to
 compile & run one-liner.
 
 ```
-./fly.sh /path/to/sketch
+./fly.sh /path/to/sketch /path/to/config
 ```
 
 `build.sh`, an almost identical script that simply omits the execution of the
@@ -78,7 +81,38 @@ final binary, may be preferable in some debugging cases.
 
 ---
 
-## Writing Factory-Compliant Sketches
+## Writing Configuration Files
+
+Configuration files, usually plaintext files with the `.ff` extension, describe
+the simulation and the rocket being simulated.
+
+Configuration files follow the basic INI format, with a few exceptions. Valid
+sections and keys are as follows:
+* `simulation` - simulator and environment parameters
+  - `initial_altitude` - launchpad altitude
+  - `type` - one of (`dof1`); simulator type
+  - `t_ignition` - time of motor ignition
+* `rocket` - physical rocket properties
+  - `mass` - rocket dry mass
+  - `radius` - body tube radius
+  - `surface_area` - surface area exposed to air stream; `auto` uses body tube
+    cross section
+  - `airbrake_surface_area` - airbrake surface area exposed to air stream at
+    100% extension
+  - `drag_coefficient` - static rocket Cd or `auto` to use profile
+  - `nosecone_length` - length of nose cone
+  - `fineness` - rocket fineness ratio
+  - `skin_roughness` - rocket skin finish
+* `cd` - rocket drag coefficient profile
+  - A list of `M Cd` pairs with monotonically increasing Mach numbers `M`
+    mapped to drag coefficients `Cd`
+* `motor` - motor thrust profile
+  - A list of `t F` pairs with monotonically increasing timesteps `t` mapped to
+    thrust scalars `F`
+
+---
+
+## Writing Factory-Compliant Code
 
 There are many ways to write code that interfaces with Flight Factory. Our
 preferred method is using Photonic's hardware abstractions to create virtual and

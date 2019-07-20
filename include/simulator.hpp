@@ -5,7 +5,12 @@
 #include "barometer.h"
 #include "imu.h"
 
+enum SimulatorType {
+  DOF1
+};
+
 struct SimulatorConfiguration {
+  SimulatorType type;
   float initial_altitude;
   float t_ignition;
 };

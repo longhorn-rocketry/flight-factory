@@ -3,6 +3,12 @@
 
 #include <string>
 
+#include "aimbot.hpp"
+#include "simulator.hpp"
+
+extern const aimbot::rocket_t gROCKET_PROPERTIES;
+extern const SimulatorConfiguration gSIMULATION_CONFIGURATION;
+
 class VirtualSerial {
 public:
   VirtualSerial();
