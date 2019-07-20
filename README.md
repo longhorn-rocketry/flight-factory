@@ -88,27 +88,27 @@ describes the simulation and the rocket being simulated.
 
 Configuration files follow the basic INI format, with a few exceptions. Valid
 sections and keys are as follows:
-* `simulation` - simulator and environment parameters
-  - `initial_altitude` - launchpad altitude
-  - `type` - one of (`dof1`); simulator type
-  - `t_ignition` - time of motor ignition
-  - `dt` - time resolution
-  - `stop_condition` - one of (`impact`, `apogee`); simulation stop event
-* `rocket` - physical rocket properties
-  - `mass` - rocket dry mass
-  - `radius` - body tube radius
-  - `surface_area` - surface area exposed to air stream; `auto` uses body tube
+* `simulation` simulator and environment parameters
+  - `initial_altitude` launchpad altitude
+  - `type` one of (`dof1`); simulator type
+  - `t_ignition` time of motor ignition
+  - `dt` time resolution
+  - `stop_condition` one of (`impact`, `apogee`); simulation stop event
+* `rocket` physical rocket properties
+  - `mass` rocket dry mass
+  - `radius` body tube radius
+  - `surface_area` surface area exposed to air stream; `auto` uses body tube
     cross section
-  - `airbrake_surface_area` - airbrake surface area exposed to air stream at
+  - `airbrake_surface_area` airbrake surface area exposed to air stream at
     100% extension
-  - `drag_coefficient` - static rocket Cd or `auto` to use profile
-  - `nosecone_length` - length of nose cone
-  - `fineness` - rocket fineness ratio
-  - `skin_roughness` - rocket skin finish
-* `cd` - rocket drag coefficient profile
+  - `drag_coefficient` static rocket Cd or `auto` to use profile
+  - `nosecone_length` length of nose cone
+  - `fineness` rocket fineness ratio
+  - `skin_roughness` rocket skin finish
+* `cd` rocket drag coefficient profile
   - A list of `M Cd` pairs with monotonically increasing Mach numbers `M`
     mapped to drag coefficients `Cd`
-* `motor` - motor thrust profile
+* `motor` motor thrust profile
   - A list of `t F` pairs with monotonically increasing timesteps `t` mapped to
     thrust scalars `F`
 
