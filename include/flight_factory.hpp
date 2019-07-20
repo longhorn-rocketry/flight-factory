@@ -24,6 +24,8 @@ extern Simulator* g_ff_simulator;
  */
 extern FlightFactoryConfiguration g_ff_config;
 
+extern std::string g_ff_fc_path;
+
 /**
  * Flight Factory core initialiation.
  *

@@ -12,10 +12,16 @@
 #define ACCEL m_rocket_acceleration
 
 Dof1Simulator::Dof1Simulator() : Simulator() {
-    ALTITUDE = INITIAL_ALTITUDE;
-    VELOCITY = 0;
-    ACCEL = 0;
-    m_motor_burning = false;
+    reset();
+}
+
+void Dof1Simulator::reset() {
+  ALTITUDE = INITIAL_ALTITUDE;
+  VELOCITY = 0;
+  ACCEL = 0;
+  m_motor_burning = false;
+  m_running = true;
+  m_t_sim = 0;
 }
 
 void Dof1Simulator::compute_rocket_acceleration() {

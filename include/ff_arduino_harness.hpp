@@ -4,6 +4,7 @@
 #include <string>
 
 #include "aimbot.hpp"
+#include "ff_telemetry.hpp"
 #include "flight_factory.hpp"
 #include "simulator.hpp"
 #include "virtual_sensors.hpp"

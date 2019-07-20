@@ -24,6 +24,8 @@ public:
   aimbot::state_t get_rocket_state();
 
   FlightReport get_report();
+
+  void reset();
 };
 
 #endif

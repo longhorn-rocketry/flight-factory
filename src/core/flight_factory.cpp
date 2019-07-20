@@ -10,11 +10,15 @@ static const std::string gUNIT_TIME = "s";
 static const std::string gUNIT_VELOCITY = gUNIT_DISPLACEMENT + "/" + gUNIT_TIME;
 static const std::string gUNIT_ACCEL = gUNIT_VELOCITY + "^2";
 
+static const std::string gFC_CONFIG_NAME = ".ff";
+
 static bool g_ff_initialized = false;
 static std::string g_ff_node_name;
 
 Simulator* g_ff_simulator = nullptr;
 FlightFactoryConfiguration g_ff_config;
+
+std::string g_ff_fc_path;
 
 static const std::string gBOOTUP_ASCII =
 R"(   ___  __   _____  ___   __    _____     ___  _      ___  _____  ___  __
@@ -44,13 +48,16 @@ namespace {
    * @brief emulate the Arduino sketch
    */
   static void run_sketch() {
+    br("$c", '=');
     setup();
 
+    // Run sim until conclusion
     while (g_ff_simulator->is_running()) {
       g_ff_simulator->run(g_ff_config.simulation.dt);
       loop();
     }
 
+    // Print flight report
     br("$c", '=');
 
     FlightReport rep = g_ff_simulator->get_report();
@@ -63,7 +70,7 @@ namespace {
 
     float apogee = rep.apogee - g_ff_config.simulation.initial_altitude;
 
-    TELEM("Apogee relative to GL: $y" + std::to_string(apogee) + "#r "
+    TELEM("Apogee relative to GL: #b$c" + std::to_string(apogee) + "#r "
           + gUNIT_DISPLACEMENT);
 
     float max_mach = rep.max_velocity / aimbot::gMACH1;
@@ -75,6 +82,18 @@ namespace {
           + gUNIT_ACCEL + " ($y" + std::to_string(max_g) + " #rG)");
     TELEM("Time to apogee: $y" + std::to_string(rep.time_to_apogee) + "#r "
           + gUNIT_TIME);
+
+    // Prompt for response
+    TELEM("Enter Q to quit, or any other key to rerun");
+    out("[#b$bffcore#r] > ");
+
+    std::string in;
+    std::getline(std::cin, in);
+
+    if (in != "Q") {
+      g_ff_simulator->reset();
+      run_sketch();
+    }
   }
 }
 
@@ -89,9 +108,11 @@ void init(int k_argc, char** k_argv, const char* k_node_name) {
     exit(1);
   }
 
-  TELEM("Loading config from $g" + std::string(k_argv[1]) + "#r...");
+  g_ff_fc_path = std::string(k_argv[1]);
 
-  g_ff_config = parse_ff_config(std::string(k_argv[1]));
+  TELEM("Loading config from $g" + g_ff_fc_path + "#r...");
+
+  g_ff_config = parse_ff_config(g_ff_fc_path + "/" + gFC_CONFIG_NAME);
 
   if (g_ff_config.simulation.type == DOF1)
     g_ff_simulator = new Dof1Simulator();

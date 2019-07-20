@@ -54,6 +54,8 @@ public:
 
   virtual FlightReport get_report() = 0;
 
+  virtual void reset() = 0;
+
   float get_time();
 
   bool is_running();
