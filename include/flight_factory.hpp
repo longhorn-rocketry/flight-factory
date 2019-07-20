@@ -6,6 +6,8 @@
 #include "aimbot.hpp"
 #include "dof1_simulator.hpp"
 #include "ffio.hpp"
+#include "simulator.hpp"
+#include "parser.hpp"
 #include "photonic.h"
 
 namespace ff {
@@ -15,6 +17,12 @@ namespace ff {
  * of mock sensor data for hardware abstractions.
  */
 extern Simulator* g_ff_simulator;
+
+/**
+ * Global pointer to the factory configuration. Contains simulator and rocket
+ * parameters, among other things.
+ */
+extern FlightFactoryConfiguration g_ff_config;
 
 /**
  * Flight Factory core initialiation.

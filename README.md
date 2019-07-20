@@ -92,6 +92,8 @@ sections and keys are as follows:
   - `initial_altitude` - launchpad altitude
   - `type` - one of (`dof1`); simulator type
   - `t_ignition` - time of motor ignition
+  - `dt` - time resolution
+  - `stop_condition` - one of (`impact`, `apogee`); simulation stop event
 * `rocket` - physical rocket properties
   - `mass` - rocket dry mass
   - `radius` - body tube radius

@@ -1,21 +1,36 @@
+#include <math.h>
+
 #include "dof1_simulator.hpp"
+#include "flight_factory.hpp"
 #include "standard_atmosphere.hpp"
 
-Dof1Simulator::Dof1Simulator(const SimulatorConfiguration& k_config,
-                             const aimbot::rocket_t k_rocket) :
-  Simulator(k_config), mCONFIG(k_config), mROCKET_PROPERTIES(k_rocket)
-{
-    m_rocket_true_state.altitude = k_config.initial_altitude;
-    m_rocket_true_state.velocity = 0;
-    m_rocket_acceleration = 0;
+#define INITIAL_ALTITUDE ff::g_ff_config.simulation.initial_altitude
+#define T_IGNITION ff::g_ff_config.simulation.t_ignition
+#define T_NO_STOP T_IGNITION * 2
+#define ALTITUDE m_rocket_true_state.altitude
+#define VELOCITY m_rocket_true_state.velocity
+#define ACCEL m_rocket_acceleration
+
+Dof1Simulator::Dof1Simulator() : Simulator() {
+    ALTITUDE = INITIAL_ALTITUDE;
+    VELOCITY = 0;
+    ACCEL = 0;
+    m_motor_burning = false;
 }
 
 void Dof1Simulator::compute_rocket_acceleration() {
   // Get base acceleration; gravity + drag
-  m_rocket_acceleration = aimbot::simple_net_acceleration(mROCKET_PROPERTIES,
-                                                          m_rocket_true_state);
+  ACCEL = aimbot::profiled_net_acceleration(
+    ff::g_ff_config.rocket,
+    m_rocket_true_state,
+    ff::g_ff_config.cd_profile
+  );
   // Add in engine force
-  // TODO wtfffffffffffffff
+  float t_engine_burn = m_t_sim - T_IGNITION;
+  float rocket_mass = ff::g_ff_config.rocket.mass;
+  float thrust = thrust_at(ff::g_ff_config.motor_profile, t_engine_burn);
+  ACCEL += thrust / rocket_mass;
+  m_motor_burning = thrust > 0;
 }
 
 void Dof1Simulator::run(float dt) {
@@ -23,13 +38,39 @@ void Dof1Simulator::run(float dt) {
 
   compute_rocket_acceleration();
 
-  m_rocket_true_state.velocity += m_rocket_acceleration * dt;
-  m_rocket_true_state.altitude += m_rocket_true_state.velocity * dt;
+  if (fabs(m_rocket_acceleration) > m_max_accel)
+    m_max_accel = fabs(m_rocket_acceleration);
 
-  // Prevent rocket from falling through the ground
-  if (m_rocket_true_state.altitude < mCONFIG.initial_altitude) {
-    m_rocket_true_state.altitude = mCONFIG.initial_altitude;
-    m_rocket_true_state.velocity = 0;
+  VELOCITY += ACCEL * dt;
+  ALTITUDE += VELOCITY * dt;
+
+  if (fabs(VELOCITY) > m_max_velocity)
+    m_max_velocity = fabs(VELOCITY);
+
+  if (m_motor_burning) {
+    if (VELOCITY < 0)
+      VELOCITY = 0;
+  }
+
+  if (ALTITUDE < INITIAL_ALTITUDE)
+    ALTITUDE = INITIAL_ALTITUDE;
+
+  if (ALTITUDE > m_apogee) {
+    m_apogee = ALTITUDE;
+    m_t_apogee = m_t_sim;
+  }
+
+  // Stop conditions
+  if (ff::g_ff_config.simulation.stop_condition == STOP_CONDITION_APOGEE &&
+      VELOCITY <= 0 &&
+      m_t_sim > T_NO_STOP)
+  {
+    m_running = false;
+  } else if (ff::g_ff_config.simulation.stop_condition == STOP_CONDITION_IMPACT &&
+             ALTITUDE == INITIAL_ALTITUDE &&
+             m_t_sim > T_NO_STOP)
+  {
+    m_running = false;
   }
 }
 
@@ -38,7 +79,7 @@ photonic::ImuData Dof1Simulator::get_imu_data() {
 
   data.ax = 0;
   data.ay = 0;
-  data.az = m_rocket_acceleration;
+  data.az = ACCEL / atmos::gravity_at(0);
   data.gx = 0;
   data.gy = 0;
   data.gz = 0;
@@ -52,7 +93,7 @@ photonic::ImuData Dof1Simulator::get_imu_data() {
 photonic::BarometerData Dof1Simulator::get_barometer_data() {
   photonic::BarometerData data;
 
-  data.altitude = m_rocket_true_state.altitude;
+  data.altitude = ALTITUDE;
   data.pressure = atmos::pressure_at(data.altitude);
   data.temperature = atmos::temperature_at(data.altitude);
 
@@ -61,4 +102,18 @@ photonic::BarometerData Dof1Simulator::get_barometer_data() {
 
 aimbot::state_t Dof1Simulator::get_rocket_state() {
   return m_rocket_true_state;
+}
+
+FlightReport Dof1Simulator::get_report() {
+  FlightReport rep;
+
+  rep.rocket_state = m_rocket_true_state;
+  rep.rocket_acceleration = m_rocket_acceleration;
+  rep.flight_duration = m_t_sim - T_IGNITION;
+  rep.apogee = m_apogee;
+  rep.time_to_apogee = m_t_apogee - T_IGNITION;
+  rep.max_acceleration = m_max_accel;
+  rep.max_velocity = m_max_velocity;
+
+  return rep;
 }

@@ -4,10 +4,9 @@
 #include <string>
 
 #include "aimbot.hpp"
+#include "flight_factory.hpp"
 #include "simulator.hpp"
-
-extern const aimbot::rocket_t gROCKET_PROPERTIES;
-extern const SimulatorConfiguration gSIMULATION_CONFIGURATION;
+#include "virtual_sensors.hpp"
 
 class VirtualSerial {
 public:

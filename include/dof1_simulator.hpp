@@ -6,16 +6,14 @@
 
 class Dof1Simulator final : public Simulator {
 private:
-  const SimulatorConfiguration mCONFIG;
-  const aimbot::rocket_t mROCKET_PROPERTIES;
   aimbot::state_t m_rocket_true_state;
   float m_rocket_acceleration;
+  bool m_motor_burning;
 
   void compute_rocket_acceleration();
 
 public:
-  Dof1Simulator(const SimulatorConfiguration& k_config,
-                const aimbot::rocket_t k_rocket);
+  Dof1Simulator();
 
   void run(float dt);
 
@@ -24,6 +22,8 @@ public:
   photonic::BarometerData get_barometer_data();
 
   aimbot::state_t get_rocket_state();
+
+  FlightReport get_report();
 };
 
 #endif

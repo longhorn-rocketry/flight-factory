@@ -64,6 +64,13 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
           config.simulation.initial_altitude = std::stof(value);
         } else if (key == "t_ignition") {
           config.simulation.t_ignition = std::stof(value);
+        } else if (key == "dt") {
+          config.simulation.dt = std::stof(value);
+        } else if (key == "stop_condition") {
+          if (value == "apogee")
+            config.simulation.stop_condition = STOP_CONDITION_APOGEE;
+          else if (value == "impact")
+            config.simulation.stop_condition = STOP_CONDITION_IMPACT;
         }
       // Rocket parameters
       } else if (current_section == gSECTION_ROCKET) {
@@ -118,7 +125,7 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
     config.cd_profile.events[i] = {cd_profile[i].first, cd_profile[i].second};
 
   if (cd_profile.size() > 0)
-    TELEM("Parsed Cd profile with " + std::to_string(cd_profile.size()) + " events.");
+    TELEM("Parsed Cd profile with " + std::to_string(cd_profile.size()) + " events");
 
   config.motor_profile.events = new thrust_event_t[motor_profile.size()];
   config.motor_profile.size = motor_profile.size();
@@ -128,7 +135,7 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
                                       motor_profile[i].second};
 
   if (motor_profile.size() > 0)
-    TELEM("Parsed thrust profile with " + std::to_string(motor_profile.size()) + " events.");
+    TELEM("Parsed thrust profile with " + std::to_string(motor_profile.size()) + " events");
 
   return config;
 }

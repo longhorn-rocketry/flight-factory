@@ -10,10 +10,10 @@ float thrust_at(const thrust_profile_t& k_profile, float k_t) {
   else if (k_t >= k_profile.events[k_profile.size - 1].t)
     return k_profile.events[k_profile.size - 1].force;
 
-  unsigned int pos = aimbot::float_struct_binsearch(&k_profile,
+  unsigned int pos = aimbot::float_struct_binsearch(k_profile.events,
                                                     k_t,
                                                     k_profile.size,
-                                                    sizeof(thrust_profile_t),
+                                                    sizeof(thrust_event_t),
                                                     0);
   const thrust_event_t& event_low = k_profile.events[pos - 1];
   const thrust_event_t& event_high = k_profile.events[pos];
