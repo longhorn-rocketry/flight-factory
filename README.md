@@ -9,6 +9,8 @@ software.
 
 ![We fly high, no lie.](https://stefandebruyn.github.io/assets/images/flight-factory-banner.png)
 
+![You know this.](https://stefandebruyn.github.io/assets/images/flight-factory-window.png)
+
 ---
 
 ## Submodules
