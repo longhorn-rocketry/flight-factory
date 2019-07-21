@@ -89,27 +89,29 @@ describes the simulation and the rocket being simulated.
 
 Configuration files follow the basic INI format, with a few exceptions. Valid
 sections and keys are as follows:
-* `simulation` simulator and environment parameters
-  - `initial_altitude` launchpad altitude
-  - `type` one of (`dof1`); simulator type
-  - `t_ignition` time of motor ignition
-  - `dt` time resolution
-  - `stop_condition` one of (`impact`, `apogee`); simulation stop event
-* `rocket` physical rocket properties
-  - `mass` rocket dry mass
-  - `radius` body tube radius
-  - `surface_area` surface area exposed to air stream; `auto` uses body tube
+* `simulation` - simulator and environment parameters
+  - `initial_altitude` - launchpad altitude
+  - `type` - one of (`dof1`); simulator type
+  - `t_ignition` - time of motor ignition
+  - `dt` - time resolution
+  - `stop_condition` - one of (`impact`, `apogee`); simulation stop event
+* `rocket` - physical rocket properties
+  - `mass` - mass without motors
+  - `radius` - body tube radius
+  - `surface_area` - surface area exposed to air stream; `auto` uses body tube
     cross section
-  - `airbrake_surface_area` airbrake surface area exposed to air stream at
+  - `airbrake_surface_area` - airbrake surface area exposed to air stream at
     100% extension
-  - `drag_coefficient` static rocket Cd or `auto` to use profile
-  - `nosecone_length` length of nose cone
-  - `fineness` rocket fineness ratio
-  - `skin_roughness` rocket skin finish
-* `cd` rocket drag coefficient profile
+  - `drag_coefficient` - static rocket Cd or `auto` to use profile
+  - `nose_cone_length` - length of nose cone
+  - `fineness` - rocket fineness ratio
+  - `skin_roughness` - rocket skin finish
+* `cd` - rocket drag coefficient profile
   - A list of `M Cd` pairs with monotonically increasing Mach numbers `M`
     mapped to drag coefficients `Cd`
-* `motor` motor thrust profile
+* `motor` - physical motor properties
+  - `wet_mass` - loaded mass
+  - `dry_mass` - burnout mass
   - A list of `t F` pairs with monotonically increasing timesteps `t` mapped to
     thrust scalars `F`
 
@@ -127,7 +129,7 @@ type=dof1
 t_ignition=1.0
 
 [rocket]
-mass=35
+mass=25
 radius=0.0762
 surface_area=auto
 airbrake_surface_area=0.0070866
@@ -144,7 +146,9 @@ drag_coefficient=auto
 2 0.23
 
 [motor]
-# Thrust profile for an N2200-PK
+# Massing and thrust profile for an N2200-PK
+wet_mass=11.356
+dry_mass=5.048
 0 0
 0.05 2750
 0.2 2450

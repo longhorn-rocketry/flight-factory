@@ -31,10 +31,26 @@ void Dof1Simulator::compute_rocket_acceleration() {
     m_rocket_true_state,
     ff::g_ff_config.cd_profile
   );
+
   // Add in engine force
   float t_engine_burn = m_t_sim - T_IGNITION;
+  float thrust = thrust_at(ff::g_ff_config.motor.thrust_profile, t_engine_burn);
+
+  // Compute rocket mass
   float rocket_mass = ff::g_ff_config.rocket.mass;
-  float thrust = thrust_at(ff::g_ff_config.motor_profile, t_engine_burn);
+  motor_t& motor = ff::g_ff_config.motor;
+
+  if (t_engine_burn < 0)
+    rocket_mass += motor.wet_mass;
+  else if (t_engine_burn > motor.burn_time)
+    rocket_mass += motor.dry_mass;
+  else {
+    float dm = motor.wet_mass - motor.dry_mass;
+    float dt = 1 - t_engine_burn / motor.burn_time;
+    rocket_mass += motor.dry_mass + dm * dt;
+  }
+
+  // Apply acceleration vector
   ACCEL += thrust / rocket_mass;
   m_motor_burning = thrust > 0;
 }

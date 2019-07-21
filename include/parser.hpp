@@ -12,7 +12,7 @@
 struct FlightFactoryConfiguration {
   SimulatorConfiguration simulation;
   aimbot::rocket_t rocket;
-  thrust_profile_t motor_profile;
+  motor_t motor;
   aimbot::cd_profile_t cd_profile;
 };
 

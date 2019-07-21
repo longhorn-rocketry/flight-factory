@@ -36,19 +36,19 @@ namespace {
    */
   static void refresh_interface() {
     system("clear");
-    // br("$c", '=');
-    out("#b$b" + gBOOTUP_ASCII);
+    // br("#b$w", '=');
+    out("#b$w" + gBOOTUP_ASCII);
     // out("\n");
     outln_ctr("(c) 2019 Longhorn Rocketry Association");
     outln_ctr(gBOOTUP_VERSION);
-    br("$c", '=');
+    br("#b$w", '=');
   }
 
   /**
    * @brief emulate the Arduino sketch
    */
   static void run_sketch() {
-    br("$c", '=');
+    br("#b$w", '=');
     setup();
 
     // Run sim until conclusion
@@ -58,7 +58,7 @@ namespace {
     }
 
     // Print flight report
-    br("$c", '=');
+    br("#b$w", '=');
 
     FlightReport rep = g_ff_simulator->get_report();
     TELEM("Final rocket state: <$y" +

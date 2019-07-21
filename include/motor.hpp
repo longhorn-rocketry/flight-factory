@@ -13,6 +13,13 @@ typedef struct {
   unsigned int size;
 } thrust_profile_t;
 
+typedef struct {
+  thrust_profile_t thrust_profile;
+  float wet_mass;
+  float dry_mass;
+  float burn_time;
+} motor_t;
+
 float thrust_at(const thrust_profile_t& k_profile, float k_t);
 
 #endif

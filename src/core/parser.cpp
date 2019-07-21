@@ -91,8 +91,8 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
         else if (key == "drag_coefficient") {
           if (value != "auto")
             config.rocket.drag_coefficient = std::stof(value);
-        } else if (key == "nosecone_length")
-          config.rocket.nosecone_length = std::stof(value);
+        } else if (key == "nose_cone_length")
+          config.rocket.nose_cone_length = std::stof(value);
         else if (key == "fineness")
           config.rocket.fineness = std::stof(value);
         else if (key == "skin_roughness")
@@ -107,12 +107,23 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
         cd_profile.push_back(std::pair<float, float>(a, b));
       // Motor profile
       } else if (current_section == gSECTION_MOTOR_PROFILE) {
-        parse_pairing(line, key, value, ' ');
+        // Thrust profile points
+        if (line.find(' ') != std::string::npos) {
+          parse_pairing(line, key, value, ' ');
 
-        float a = std::stof(key);
-        float b = std::stof(value);
+          float a = std::stof(key);
+          float b = std::stof(value);
 
-        motor_profile.push_back(std::pair<float, float>(a, b));
+          motor_profile.push_back(std::pair<float, float>(a, b));
+        // Motor properties
+        } else {
+          parse_pairing(line, key, value, '=');
+
+          if (key == "wet_mass")
+            config.motor.wet_mass = std::stof(value);
+          else if (key == "dry_mass")
+            config.motor.dry_mass = std::stof(value);
+        }
       }
     }
   }
@@ -127,15 +138,19 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
   if (cd_profile.size() > 0)
     TELEM("Parsed Cd profile with " + std::to_string(cd_profile.size()) + " events");
 
-  config.motor_profile.events = new thrust_event_t[motor_profile.size()];
-  config.motor_profile.size = motor_profile.size();
+  config.motor.thrust_profile.events =
+      new thrust_event_t[motor_profile.size()];
+  config.motor.thrust_profile.size = motor_profile.size();
 
   for (unsigned int i = 0; i < motor_profile.size(); i++)
-    config.motor_profile.events[i] = {motor_profile[i].first,
-                                      motor_profile[i].second};
+    config.motor.thrust_profile.events[i] = {motor_profile[i].first,
+                                             motor_profile[i].second};
 
-  if (motor_profile.size() > 0)
+  if (motor_profile.size() > 0) {
+    config.motor.burn_time = motor_profile[motor_profile.size() - 1].first;
+
     TELEM("Parsed thrust profile with " + std::to_string(motor_profile.size()) + " events");
+  }
 
   return config;
 }
