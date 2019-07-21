@@ -3,8 +3,9 @@
 > May Lars Blackmore render our convexification lossless.
 
 Flight Factory is LRA's workbench for developing and testing avionics software.
-It is primarily composed of a simulation API that easily interfaces with Arduino
-sketches for hardware-free ground testing of production flight software.
+It is primarily composed of a simulation API that interfaces with Arduino
+sketches and allows for hardware-free ground testing of production flight
+software.
 
 ![We fly high, no lie.](https://stefandebruyn.github.io/assets/images/flight-factory-banner.png)
 
@@ -204,8 +205,7 @@ ff::tout("accel", rocket_time(), imu->get_acc_z());
 
 ```
 
-The script `vis.py` will generate matplots of `.dat` files generated in this
-fashion:
+The script `vis.py` will generate matplots of telemetry files:
 
 ```
 python3 vis.py /path/to/sketch/telem/accel.dat
