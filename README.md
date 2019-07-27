@@ -32,7 +32,7 @@ Ubuntu 16.04. We prefer this release because it plays very nicely with GCC.
 First, collect the dependencies.
 
 ```
-sudo apt-get install git build-essential python3.6 matplotlib
+apt-get install git build-essential python3.6 matplotlib
 ```
 
 Then, clone the repository into your location of choice.
