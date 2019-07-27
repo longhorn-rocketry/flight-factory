@@ -137,9 +137,9 @@ mass=25
 radius=0.0762
 surface_area=auto
 airbrake_surface_area=0.0070866
-drag_coefficient=auto
+drag_coefficient=profile
 
-[cd]
+[cd_profile]
 # M/Cd profile derived from OpenRocket
 0 0.46
 0.5 0.55
