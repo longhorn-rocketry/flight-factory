@@ -102,13 +102,17 @@ sections and keys are as follows:
     cross section
   - `airbrake_surface_area` - airbrake surface area exposed to air stream at
     100% extension
-  - `drag_coefficient` - static rocket Cd or `auto` to use profile
+  - `drag_coefficient` - static rocket Cd or one of (`profile`, `plane`) for
+    profiled and planar Cd scheduling, respectively (see relevant sections)
   - `nose_cone_length` - length of nose cone
   - `fineness` - rocket fineness ratio
   - `skin_roughness` - rocket skin finish
-* `cd` - rocket drag coefficient profile
+* `cd_profile` - rocket drag coefficient profile
   - A list of `M Cd` pairs with monotonically increasing Mach numbers `M`
     mapped to drag coefficients `Cd`
+* `cd_plane` - rocket drag coefficient plane
+  - `src` - fully-qualified path to plane source file (exactly how this works
+    is some secret sauce)
 * `motor` - physical motor properties
   - `wet_mass` - loaded mass
   - `dry_mass` - burnout mass

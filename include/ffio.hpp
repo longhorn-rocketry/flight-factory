@@ -5,6 +5,9 @@
 
 namespace ff {
 
+extern const unsigned int gTERMINAL_WIDTH;
+extern const unsigned int gTERMINAL_HEIGHT;
+
 /**
  * Stdout for Flight Factory. Supports formatting codes.
  *

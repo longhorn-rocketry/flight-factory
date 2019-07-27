@@ -9,7 +9,8 @@ static const char gMETACHAR_FORMAT = '#';
 static const char gMETACHAR_MULTICODE_OPEN = '{';
 static const char gMETACHAR_MULTICODE_CLOSE = '}';
 
-static const unsigned int gTERMINAL_WIDTH = 80;
+const unsigned int gTERMINAL_WIDTH = 80;
+const unsigned int gTERMINAL_HEIGHT = 24;
 
 static std::map<std::string, std::string> g_color_codes = {
   {"k", "30"},

@@ -14,7 +14,8 @@ static const char gCOMMENT = '#';
 
 static const std::string gSECTION_SIMULATION = "simulation";
 static const std::string gSECTION_ROCKET = "rocket";
-static const std::string gSECTION_CD_PROFILE = "cd";
+static const std::string gSECTION_CD_PROFILE = "cd_profile";
+static const std::string gSECTION_CD_PLANE = "cd_plane";
 static const std::string gSECTION_MOTOR_PROFILE = "motor";
 
 namespace {
@@ -89,8 +90,14 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
         } else if (key == "airbrake_surface_area")
           config.rocket.airbrake_surface_area = std::stof(value);
         else if (key == "drag_coefficient") {
-          if (value != "auto")
+          if (value == "profile")
+            config.cd_source = PROFILE;
+          else if (value == "plane")
+            config.cd_source = PLANE;
+          else {
+            config.cd_source = STATIC;
             config.rocket.drag_coefficient = std::stof(value);
+          }
         } else if (key == "nose_cone_length")
           config.rocket.nose_cone_length = std::stof(value);
         else if (key == "fineness")
@@ -124,6 +131,12 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
           else if (key == "dry_mass")
             config.motor.dry_mass = std::stof(value);
         }
+      // Cd plane
+      } else if (current_section == gSECTION_CD_PLANE) {
+        parse_pairing(line, key, value, '=');
+
+        if (key == "src")
+          parse_cd_plane(value, config);
       }
     }
   }
@@ -153,4 +166,55 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
   }
 
   return config;
+}
+
+void parse_cd_plane(std::string k_fpath, FlightFactoryConfiguration& k_config) {
+  std::ifstream in(k_fpath);
+  std::string line;
+  std::string current_section;
+  std::vector<float> coeffs;
+
+  while (std::getline(in, line)) {
+    if (line.size() == 0)
+      continue;
+
+    if (line.at(0) == gCOMMENT)
+      continue;
+
+    // Cd value
+    if (line.find("=") == std::string::npos) {
+      float cd = std::stof(line);
+      coeffs.push_back(cd);
+    // Plane parameter
+    } else {
+      std::string key, value;
+      parse_pairing(line, key, value, '=');
+
+      float* f;
+
+      if (key == "s_low")
+        f = &k_config.cd_plane.alt_low;
+      else if (key == "s_high")
+        f = &k_config.cd_plane.alt_high;
+      else if (key == "s_step")
+        f = &k_config.cd_plane.alt_step;
+      else if (key == "v_low")
+        f = &k_config.cd_plane.vel_low;
+      if (key == "v_high")
+        f = &k_config.cd_plane.vel_high;
+      else if (key == "v_step")
+        f = &k_config.cd_plane.vel_step;
+
+      *f = std::stof(value);
+    }
+  }
+
+  k_config.cd_plane.plane = new float[coeffs.size()];
+
+  for (std::size_t i = 0; i < coeffs.size(); i++)
+    k_config.cd_plane.plane[i] = coeffs[i];
+
+  TELEM("Parsed Cd plane with " + std::to_string(coeffs.size()) + " points");
+
+  in.close();
 }

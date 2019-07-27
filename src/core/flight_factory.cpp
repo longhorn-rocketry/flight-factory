@@ -1,5 +1,8 @@
+#include <unistd.h>
+
 #include "ff_arduino_harness.hpp"
 #include "flight_factory.hpp"
+#include "virtual_sensors.hpp"
 
 #define TELEM(data) outln(std::string("[#b$bffcore#r] ") + data)
 
@@ -12,6 +15,11 @@ static const std::string gUNIT_ACCEL = gUNIT_VELOCITY + "^2";
 
 static const std::string gFC_CONFIG_NAME = ".ff";
 
+static const float gMETERS_TO_FEET = 3.28084;
+static const float gBOOTUP_DURATION = 1.0;
+
+static VirtualTimekeeper g_clock;
+
 static bool g_ff_initialized = false;
 static std::string g_ff_node_name;
 
@@ -20,14 +28,27 @@ FlightFactoryConfiguration g_ff_config;
 
 std::string g_ff_fc_path;
 
-static const std::string gBOOTUP_ASCII =
-R"(   ___  __   _____  ___   __    _____     ___  _      ___  _____  ___  __
-  / __\/ /   \_   \/ _ \ / / /\/__   \   / __\/_\    / __\/__   \/___\/__\/\_/\
- / _\ / /     / /\/ /_\// /_/ /  / /\/  / _\ //_\\  / /     / /\//  // \//\_ _/
-/ /  / /___/\/ /_/ /_\\/ __  /  / /    / /  /  _  \/ /___  / / / \_// _  \ / \
-\/   \____/\____/\____/\/ /_/   \/     \/   \_/ \_/\____/  \/  \___/\/ \_/ \_/
-)";
-static const std::string gBOOTUP_VERSION = "$yVersion 0.0.0 #b$yAvaritia";
+static const std::vector<std::string> gBOOTUP_ASCII = {
+  "                            ./////:",
+  "          +my:`             oMMNsMm",
+  "   `:+`   /MMMNo.           oMdNNMm",
+  ".ohNdNh.  .smMMMNo`         sM:-dMm",
+  "/NMNdmMm+ymd:mMMNMm/        dMoyNMm",
+  " -mMo+sMMd:`sMMo-:dMy`     /MMMmoNm",
+  "  `hN/oMNNo `dMo-:dMNh.   /NmMM+`Nm",
+  "   `sNNM++Ny``hNNMM+yyo/oyh/oMmMdMm",
+  "     +NMyoyMd-:yohMhyyyys-  oM/:dMm",
+  "      :mMddmNNNh++MMMMMMMy- oM+sNMm",
+  "       .dm:.mMM+ :NMMMMMMMNy+hNNsMm",
+  "        `yNyMNoNs`:MMMMMMMMMNds- Nm",
+  "          oMMy-+Nh`yMMMMMMMMNmNmosy",
+  "           /NMNNMMm-MMMMMMMh/h:-+s:",
+  "            -NN/:yMoyMM+.:hN-M/+mNd",
+  "           +mMMN:dMN:Mh    ./MNMhMm",
+  "          /NNNNNNNNN/y-     oMMNmMm"
+};
+static const std::string gBOOTUP_VERSION = "Version 0.1.1 $yAvaritia";
+static const std::string gBOOTUP_COPYRIGHT = "(c) 2019 Longhorn Rocketry Association";
 
 namespace {
 
@@ -35,13 +56,12 @@ namespace {
    * @brief clears the terminal and prints the main banner
    */
   static void refresh_interface() {
-    system("clear");
+    /*system("clear");
     // br("#b$w", '=');
-    out("#b$w" + gBOOTUP_ASCII);
     // out("\n");
-    outln_ctr("(c) 2019 Longhorn Rocketry Association");
     outln_ctr(gBOOTUP_VERSION);
-    br("#b$w", '=');
+    outln_ctr("(c) 2019 Longhorn Rocketry Association");
+    br("#b$w", '=');*/
   }
 
   /**
@@ -69,9 +89,11 @@ namespace {
           + gUNIT_TIME);
 
     float apogee = rep.apogee - g_ff_config.simulation.initial_altitude;
+    float apogee_ft = apogee * gMETERS_TO_FEET;
 
     TELEM("Apogee relative to GL: #b$c" + std::to_string(apogee) + "#r "
-          + gUNIT_DISPLACEMENT);
+          + gUNIT_DISPLACEMENT + " (#b$c" + std::to_string(apogee_ft)
+          + "#r ft)");
 
     float max_mach = rep.max_velocity / aimbot::gMACH1;
     float max_g = rep.max_acceleration / atmos::gravity_at(0);
@@ -90,18 +112,54 @@ namespace {
     std::string in;
     std::getline(std::cin, in);
 
-    if (in != "Q") {
+    if (in != "Q" && in != "q") {
       g_ff_simulator->reset();
       run_sketch();
     }
   }
+
+  /**
+   * @brief displays the boot screen and runs the sim after a short time
+   */
+  static void boot() {
+    system("clear");
+
+    std::vector<std::string> bootup_text;
+    bootup_text.push_back("");
+    bootup_text.push_back("#b$wFLIGHT FACTORY");
+    bootup_text.push_back(gBOOTUP_VERSION);
+    bootup_text.push_back(gBOOTUP_COPYRIGHT);
+
+    unsigned int line_count = gBOOTUP_ASCII.size() + bootup_text.size();
+    unsigned int gutter = (gTERMINAL_HEIGHT - line_count) / 2;
+
+    for (unsigned int i = 0; i < gutter; i++)
+      outln("");
+
+    for (unsigned int i = 0; i < gBOOTUP_ASCII.size(); i++)
+      outln_ctr("#b$w" + gBOOTUP_ASCII[i]);
+
+      for (unsigned int i = 0; i < bootup_text.size(); i++)
+        outln_ctr(bootup_text[i]);
+
+    usleep(gBOOTUP_DURATION * 1e6);
+
+    system("clear");
+  }
 }
 
+/**
+ * Initializes ffcore. This must be called before run.
+ *
+ * @param k_argc      system arguments count
+ * @param k_argv      system arguments
+ * @param k_node_name node name
+ */
 void init(int k_argc, char** k_argv, const char* k_node_name) {
   g_ff_initialized = true;
   g_ff_node_name = std::string(k_node_name);
 
-  refresh_interface();
+  boot();
 
   if (k_argc < 2) {
     TELEM("$rFATAL: No simulation file was provided");
@@ -110,7 +168,7 @@ void init(int k_argc, char** k_argv, const char* k_node_name) {
 
   g_ff_fc_path = std::string(k_argv[1]);
 
-  TELEM("Loading config from $g" + g_ff_fc_path + "#r...");
+  TELEM("Loading config from " + g_ff_fc_path + "...");
 
   g_ff_config = parse_ff_config(g_ff_fc_path + "/" + gFC_CONFIG_NAME);
 
@@ -123,6 +181,9 @@ void init(int k_argc, char** k_argv, const char* k_node_name) {
   }
 }
 
+/**
+ * @brief runs a simulation for the sketch provided at startup
+ */
 void run() {
   if (!g_ff_initialized) {
     TELEM("$rFATAL: Cannot run simulation; Flight Factory is not initialized");

@@ -26,11 +26,24 @@ void Dof1Simulator::reset() {
 
 void Dof1Simulator::compute_rocket_acceleration() {
   // Get base acceleration; gravity + drag
-  ACCEL = aimbot::profiled_net_acceleration(
-    ff::g_ff_config.rocket,
-    m_rocket_true_state,
-    ff::g_ff_config.cd_profile
-  );
+  if (ff::g_ff_config.cd_source == STATIC) {
+    ACCEL = aimbot::simple_net_acceleration(
+      ff::g_ff_config.rocket,
+      m_rocket_true_state
+    );
+  } else if (ff::g_ff_config.cd_source == PROFILE) {
+    ACCEL = aimbot::profiled_net_acceleration(
+      ff::g_ff_config.rocket,
+      m_rocket_true_state,
+      ff::g_ff_config.cd_profile
+    );
+  } else if (ff::g_ff_config.cd_source == PLANE) {
+    ACCEL = aimbot::planar_net_acceleration(
+      ff::g_ff_config.rocket,
+      m_rocket_true_state,
+      ff::g_ff_config.cd_plane
+    );
+  }
 
   // Add in engine force
   float t_engine_burn = m_t_sim - T_IGNITION;
