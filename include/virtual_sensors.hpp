@@ -1,11 +1,9 @@
 #ifndef FLIGHT_FACTORY_VIRTUAL_SENSORS_HPP
 #define FLIGHT_FACTORY_VIRTUAL_SENSORS_HPP
 
-#include "photonic.h"
+#include "photic.h"
 
-class VirtualImu : public photonic::Imu {
-protected:
-
+class VirtualImu : public photic::Imu {
 public:
   VirtualImu();
 
@@ -16,9 +14,7 @@ public:
   void update();
 };
 
-class VirtualBarometer : public photonic::Barometer {
-protected:
-
+class VirtualBarometer : public photic::Barometer {
 public:
   VirtualBarometer();
 
@@ -29,7 +25,7 @@ public:
   void update();
 };
 
-class VirtualTimekeeper : public photonic::Timekeeper {
+class VirtualTimekeeper : public photic::Timekeeper {
 public:
   float time();
 };

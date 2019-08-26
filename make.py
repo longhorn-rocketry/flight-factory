@@ -12,7 +12,7 @@ if len(sys.argv) < 2:
 REPOSITORY_ROOT = os.getcwd()
 
 AIMBOT_ROOT = osp.join(REPOSITORY_ROOT, "aimbot")
-PHOTONIC_ROOT = osp.join(REPOSITORY_ROOT, "photonic")
+PHOTONIC_ROOT = osp.join(REPOSITORY_ROOT, "photic")
 INCLUDE_ROOT = osp.join(REPOSITORY_ROOT, "include")
 SRC_ROOT = osp.join(REPOSITORY_ROOT, "src")
 

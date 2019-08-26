@@ -9,8 +9,8 @@ static const char gMETACHAR_FORMAT = '#';
 static const char gMETACHAR_MULTICODE_OPEN = '{';
 static const char gMETACHAR_MULTICODE_CLOSE = '}';
 
-const unsigned int gTERMINAL_WIDTH = 80;
-const unsigned int gTERMINAL_HEIGHT = 24;
+const std::size_t gTERMINAL_WIDTH = 80;
+const std::size_t gTERMINAL_HEIGHT = 24;
 
 static std::map<std::string, std::string> g_color_codes = {
   {"k", "30"},
@@ -42,17 +42,17 @@ namespace {
    * @param k_offset    size of code, including formatting metacharacters
    */
   static void parse_code(const std::string& k_data,
-                         unsigned int k_start_pos,
+                         std::size_t k_start_pos,
                          std::string& k_code,
-                         unsigned int& k_offset)
+                         std::size_t& k_offset)
   {
     k_offset = 1;
     char c_next = k_data.at(k_start_pos + 1);
 
     if (c_next == gMETACHAR_MULTICODE_OPEN) {
-      unsigned int open_pos = k_start_pos + 2;
-      unsigned int close_pos = k_data.find(gMETACHAR_MULTICODE_CLOSE,
-                                           k_start_pos);
+      std::size_t open_pos = k_start_pos + 2;
+      std::size_t close_pos = k_data.find(gMETACHAR_MULTICODE_CLOSE,
+                                          k_start_pos);
       k_code = k_data.substr(open_pos, close_pos - open_pos);
       k_offset += k_code.size() + 2;
     } else {
@@ -68,16 +68,16 @@ namespace {
    * @param  k_data string to evaluate
    * @return        true string length
    */
-  static int strlen_no_metas(const std::string& k_data) {
-    unsigned int pos = 0;
-    unsigned int size = 0;
+  static std::size_t strlen_no_metas(const std::string& k_data) {
+    std::size_t pos = 0;
+    std::size_t size = 0;
 
     while (pos < k_data.size()) {
       char c = k_data.at(pos);
 
       if (c == gMETACHAR_COLOR || c == gMETACHAR_FORMAT) {
         std::string code;
-        unsigned int offset;
+        std::size_t offset;
 
         parse_code(k_data, pos, code, offset);
 
@@ -93,7 +93,7 @@ namespace {
 }
 
 void out(std::string k_data) {
-  unsigned int pos = 0;
+  std::size_t pos = 0;
   std::string format_code = g_format_codes[std::string("r")];
 
   while (pos < k_data.size()) {
@@ -101,7 +101,7 @@ void out(std::string k_data) {
 
     if (c == gMETACHAR_FORMAT) {
       std::string code;
-      unsigned int offset;
+      std::size_t offset;
 
       parse_code(k_data, pos, code, offset);
 
@@ -110,7 +110,7 @@ void out(std::string k_data) {
       pos += offset;
     } else if (c == gMETACHAR_COLOR) {
       std::string code;
-      unsigned int offset;
+      std::size_t offset;
 
       parse_code(k_data, pos, code, offset);
 
@@ -131,16 +131,25 @@ void outln(std::string k_data) {
 }
 
 void outln_ctr(std::string k_data) {
-  unsigned int gutter = (gTERMINAL_WIDTH - strlen_no_metas(k_data)) / 2;
+  std::size_t gutter = (gTERMINAL_WIDTH - strlen_no_metas(k_data)) / 2;
 
-  for (unsigned int i = 0; i < gutter; i++)
+  for (std::size_t i = 0; i < gutter; i++)
     out(" ");
 
   outln(k_data);
 }
 
-void br(std::string code, char c) {
-  for (int i = 0; i < gTERMINAL_WIDTH; i++)
+void br(std::string code, char c, std::string title, float align) {
+  std::size_t len = strlen_no_metas(title);
+  std::size_t break_chars = gTERMINAL_WIDTH - len;
+  std::size_t lhs_gutter_chars = break_chars * align;
+
+  for (std::size_t i = 0; i < lhs_gutter_chars; i++)
+    out(code + c);
+
+  out(title);
+
+  for (std::size_t i = 0; i < break_chars - lhs_gutter_chars; i++)
     out(code + c);
 
   out("\n");

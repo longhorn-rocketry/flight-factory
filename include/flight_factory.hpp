@@ -8,7 +8,7 @@
 #include "ffio.hpp"
 #include "simulator.hpp"
 #include "parser.hpp"
-#include "photonic.h"
+#include "photic.h"
 
 namespace ff {
 
@@ -31,10 +31,8 @@ extern std::string g_ff_fc_path;
  *
  * @param k_argc      system argument count
  * @param k_argv      system argument array
- * @param k_node_name name of client node (completely arbitrary and only for
- *                    added telemetry fanciness)
  */
-void init(int k_argc, char** k_argv, const char* k_node_name);
+void init(int k_argc, char** k_argv);
 
 /**
  * @brief runs a simulation

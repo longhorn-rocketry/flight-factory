@@ -10,7 +10,7 @@ bool VirtualImu::initialize() {
 }
 
 void VirtualImu::update() {
-  data = ff::g_ff_simulator->get_imu_data();
+  m_data = ff::g_ff_simulator->get_imu_data();
 }
 
 VirtualBarometer::VirtualBarometer() {}
@@ -22,7 +22,7 @@ bool VirtualBarometer::initialize() {
 }
 
 void VirtualBarometer::update() {
-  data = ff::g_ff_simulator->get_barometer_data();
+  m_data = ff::g_ff_simulator->get_barometer_data();
 }
 
 float VirtualTimekeeper::time() {

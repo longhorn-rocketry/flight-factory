@@ -72,6 +72,23 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
             config.simulation.stop_condition = STOP_CONDITION_APOGEE;
           else if (value == "impact")
             config.simulation.stop_condition = STOP_CONDITION_IMPACT;
+        } else if (key == "cd_model") {
+          if (value == "static")
+            config.simulation.cd_model_type = CD_MODEL_STATIC;
+          else if (value == "profile")
+            config.simulation.cd_model_type = CD_MODEL_SCHEDULE;
+          else if (value == "planar")
+            config.simulation.cd_model_type = CD_MODEL_PLANAR;
+          else
+            TELEM("$rWarning: unknown Cd model \"" + value + "\"; using static");
+        } else if (key == "airbrake_model") {
+          if (value == "static")
+            config.simulation.airbrake_model_type = AIRBRAKE_MODEL_STATIC;
+          else if (value == "airflow_deflection")
+            config.simulation.airbrake_model_type =
+                AIRBRAKE_MODEL_AIRFLOW_DEFLECTION;
+          else
+            TELEM("$rWarning: unknown airbrake model \"" + value + "\"; using static");
         }
       // Rocket parameters
       } else if (current_section == gSECTION_ROCKET) {
@@ -89,16 +106,9 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
             config.rocket.surface_area = std::stof(value);
         } else if (key == "airbrake_surface_area")
           config.rocket.airbrake_surface_area = std::stof(value);
-        else if (key == "drag_coefficient") {
-          if (value == "profile")
-            config.cd_source = PROFILE;
-          else if (value == "plane")
-            config.cd_source = PLANE;
-          else {
-            config.cd_source = STATIC;
-            config.rocket.drag_coefficient = std::stof(value);
-          }
-        } else if (key == "nose_cone_length")
+        else if (key == "drag_coefficient")
+          config.rocket.drag_coefficient = std::stof(value);
+        else if (key == "nose_cone_length")
           config.rocket.nose_cone_length = std::stof(value);
         else if (key == "fineness")
           config.rocket.fineness = std::stof(value);
@@ -142,11 +152,13 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
   }
 
   // Build Cd and motor profiles
-  config.cd_profile.events = new aimbot::cd_event_t[cd_profile.size()];
-  config.cd_profile.size = cd_profile.size();
+  config.simulation.cd_profile.events =
+    new aimbot::cd_event_t[cd_profile.size()];
+  config.simulation.cd_profile.size = cd_profile.size();
 
   for (unsigned int i = 0; i < cd_profile.size(); i++)
-    config.cd_profile.events[i] = {cd_profile[i].first, cd_profile[i].second};
+    config.simulation.cd_profile.events[i] =
+      {cd_profile[i].first, cd_profile[i].second};
 
   if (cd_profile.size() > 0)
     TELEM("Parsed Cd profile with " + std::to_string(cd_profile.size()) + " events");
@@ -193,26 +205,26 @@ void parse_cd_plane(std::string k_fpath, FlightFactoryConfiguration& k_config) {
       float* f;
 
       if (key == "s_low")
-        f = &k_config.cd_plane.alt_low;
+        f = &k_config.simulation.cd_plane.alt_low;
       else if (key == "s_high")
-        f = &k_config.cd_plane.alt_high;
+        f = &k_config.simulation.cd_plane.alt_high;
       else if (key == "s_step")
-        f = &k_config.cd_plane.alt_step;
+        f = &k_config.simulation.cd_plane.alt_step;
       else if (key == "v_low")
-        f = &k_config.cd_plane.vel_low;
+        f = &k_config.simulation.cd_plane.vel_low;
       if (key == "v_high")
-        f = &k_config.cd_plane.vel_high;
+        f = &k_config.simulation.cd_plane.vel_high;
       else if (key == "v_step")
-        f = &k_config.cd_plane.vel_step;
+        f = &k_config.simulation.cd_plane.vel_step;
 
       *f = std::stof(value);
     }
   }
 
-  k_config.cd_plane.plane = new float[coeffs.size()];
+  k_config.simulation.cd_plane.plane = new float[coeffs.size()];
 
   for (std::size_t i = 0; i < coeffs.size(); i++)
-    k_config.cd_plane.plane[i] = coeffs[i];
+    k_config.simulation.cd_plane.plane[i] = coeffs[i];
 
   TELEM("Parsed Cd plane with " + std::to_string(coeffs.size()) + " points");
 

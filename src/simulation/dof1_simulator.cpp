@@ -1,4 +1,5 @@
 #include <math.h>
+#include <iostream>
 
 #include "dof1_simulator.hpp"
 #include "flight_factory.hpp"
@@ -11,7 +12,9 @@
 #define VELOCITY m_rocket_true_state.velocity
 #define ACCEL m_rocket_acceleration
 
-Dof1Simulator::Dof1Simulator() : Simulator() {
+Dof1Simulator::Dof1Simulator(const FlightFactoryConfiguration& k_config) :
+  Simulator(k_config)
+{
     reset();
 }
 
@@ -19,35 +22,25 @@ void Dof1Simulator::reset() {
   ALTITUDE = INITIAL_ALTITUDE;
   VELOCITY = 0;
   ACCEL = 0;
+
   m_motor_burning = false;
   m_running = true;
   m_t_sim = 0;
+
+  m_parameters["airbrake_extension"] = 0.0;
 }
 
 void Dof1Simulator::compute_rocket_acceleration() {
-  // Get base acceleration; gravity + drag
-  if (ff::g_ff_config.cd_source == STATIC) {
-    ACCEL = aimbot::simple_net_acceleration(
-      ff::g_ff_config.rocket,
-      m_rocket_true_state
-    );
-  } else if (ff::g_ff_config.cd_source == PROFILE) {
-    ACCEL = aimbot::profiled_net_acceleration(
-      ff::g_ff_config.rocket,
-      m_rocket_true_state,
-      ff::g_ff_config.cd_profile
-    );
-  } else if (ff::g_ff_config.cd_source == PLANE) {
-    ACCEL = aimbot::planar_net_acceleration(
-      ff::g_ff_config.rocket,
-      m_rocket_true_state,
-      ff::g_ff_config.cd_plane
-    );
-  }
+  ACCEL = -atmos::gravity_at(m_rocket_true_state.altitude);
 
-  // Add in engine force
+  // Compute engine thrust
   float t_engine_burn = m_t_sim - T_IGNITION;
   float thrust = thrust_at(ff::g_ff_config.motor.thrust_profile, t_engine_burn);
+
+  // Compute drag force
+  float drag = m_airbrake_model->net_drag(ff::g_ff_config.rocket,
+                                          m_rocket_true_state,
+                                          m_parameters["airbrake_extension"]);
 
   // Compute rocket mass
   float rocket_mass = ff::g_ff_config.rocket.mass;
@@ -64,7 +57,7 @@ void Dof1Simulator::compute_rocket_acceleration() {
   }
 
   // Apply acceleration vector
-  ACCEL += thrust / rocket_mass;
+  ACCEL += (thrust - drag) / rocket_mass;
   m_motor_burning = thrust > 0;
 }
 
@@ -109,8 +102,8 @@ void Dof1Simulator::run(float dt) {
   }
 }
 
-photonic::ImuData Dof1Simulator::get_imu_data() {
-  photonic::ImuData data;
+photic::ImuData Dof1Simulator::get_imu_data() {
+  photic::ImuData data;
 
   data.ax = 0;
   data.ay = 0;
@@ -125,8 +118,8 @@ photonic::ImuData Dof1Simulator::get_imu_data() {
   return data;
 }
 
-photonic::BarometerData Dof1Simulator::get_barometer_data() {
-  photonic::BarometerData data;
+photic::BarometerData Dof1Simulator::get_barometer_data() {
+  photic::BarometerData data;
 
   data.altitude = ALTITUDE;
   data.pressure = atmos::pressure_at(data.altitude);

@@ -17,7 +17,7 @@ software.
 
 The following are LRA tools created and used in the factory.
 
-* [Photonic](https://github.com/longhorn-rocketry/photonic), our flight computer
+* [Photic](https://github.com/longhorn-rocketry/photic), our flight computer
 library
 * [Aimbot](https://github.com/longhorn-rocketry/aimbot), the control algorithm
 for our experimental airbrakes
@@ -169,7 +169,7 @@ dry_mass=5.048
 ## Writing Factory-Compliant Code
 
 There are many ways to write code that interfaces with Flight Factory. Our
-preferred method is using Photonic's hardware abstractions to create virtual and
+preferred method is using Photic's hardware abstractions to create virtual and
 physical I/O that can be toggled between with a single `#define`. Flight Factory
 includes its own abstractions for certain Arduino-specific objects, such as
 `Serial`.

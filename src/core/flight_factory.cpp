@@ -2,7 +2,6 @@
 
 #include "ff_arduino_harness.hpp"
 #include "flight_factory.hpp"
-#include "virtual_sensors.hpp"
 
 #define TELEM(data) outln(std::string("[#b$bffcore#r] ") + data)
 
@@ -18,10 +17,7 @@ static const std::string gFC_CONFIG_NAME = ".ff";
 static const float gMETERS_TO_FEET = 3.28084;
 static const float gBOOTUP_DURATION = 1.0;
 
-static VirtualTimekeeper g_clock;
-
 static bool g_ff_initialized = false;
-static std::string g_ff_node_name;
 
 Simulator* g_ff_simulator = nullptr;
 FlightFactoryConfiguration g_ff_config;
@@ -47,28 +43,18 @@ static const std::vector<std::string> gBOOTUP_ASCII = {
   "           +mMMN:dMN:Mh    ./MNMhMm",
   "          /NNNNNNNNN/y-     oMMNmMm"
 };
-static const std::string gBOOTUP_VERSION = "Version 0.1.1 $yAvaritia";
+static const std::string gBOOTUP_VERSION = "Version 0.1.1 $bAvaritia";
 static const std::string gBOOTUP_COPYRIGHT = "(c) 2019 Longhorn Rocketry Association";
 
 namespace {
 
   /**
-   * @brief clears the terminal and prints the main banner
-   */
-  static void refresh_interface() {
-    /*system("clear");
-    // br("#b$w", '=');
-    // out("\n");
-    outln_ctr(gBOOTUP_VERSION);
-    outln_ctr("(c) 2019 Longhorn Rocketry Association");
-    br("#b$w", '=');*/
-  }
-
-  /**
    * @brief emulate the Arduino sketch
    */
   static void run_sketch() {
-    br("#b$w", '=');
+    br("#b$w", '=', " #b$g>>> #b$wENTERING SIMULATION ", 0.08);
+
+    // Initialize rocket FC
     setup();
 
     // Run sim until conclusion
@@ -77,9 +63,9 @@ namespace {
       loop();
     }
 
-    // Print flight report
-    br("#b$w", '=');
+    br("#b$w", '=', " $g<<< #b$wLEAVING SIMULATION  ", 0.08);
 
+    // Print flight report
     FlightReport rep = g_ff_simulator->get_report();
     TELEM("Final rocket state: <$y" +
           std::to_string(rep.rocket_state.altitude) + "#r, $y" +
@@ -139,8 +125,8 @@ namespace {
     for (unsigned int i = 0; i < gBOOTUP_ASCII.size(); i++)
       outln_ctr("#b$w" + gBOOTUP_ASCII[i]);
 
-      for (unsigned int i = 0; i < bootup_text.size(); i++)
-        outln_ctr(bootup_text[i]);
+    for (unsigned int i = 0; i < bootup_text.size(); i++)
+      outln_ctr(bootup_text[i]);
 
     usleep(gBOOTUP_DURATION * 1e6);
 
@@ -153,11 +139,9 @@ namespace {
  *
  * @param k_argc      system arguments count
  * @param k_argv      system arguments
- * @param k_node_name node name
  */
-void init(int k_argc, char** k_argv, const char* k_node_name) {
+void init(int k_argc, char** k_argv) {
   g_ff_initialized = true;
-  g_ff_node_name = std::string(k_node_name);
 
   boot();
 
@@ -173,7 +157,7 @@ void init(int k_argc, char** k_argv, const char* k_node_name) {
   g_ff_config = parse_ff_config(g_ff_fc_path + "/" + gFC_CONFIG_NAME);
 
   if (g_ff_config.simulation.type == DOF1)
-    g_ff_simulator = new Dof1Simulator();
+    g_ff_simulator = new Dof1Simulator(g_ff_config);
 
   if (g_ff_simulator == nullptr) {
     TELEM("$rFATAL: No simulator could be built. Possible invalid type?");

@@ -9,6 +9,8 @@
 #include "simulator.hpp"
 #include "virtual_sensors.hpp"
 
+#define SIM (*ff::g_ff_simulator)
+
 class VirtualSerial {
 public:
   VirtualSerial();

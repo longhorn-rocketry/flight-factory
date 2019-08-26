@@ -5,8 +5,8 @@
 
 namespace ff {
 
-extern const unsigned int gTERMINAL_WIDTH;
-extern const unsigned int gTERMINAL_HEIGHT;
+extern const std::size_t gTERMINAL_WIDTH;
+extern const std::size_t gTERMINAL_HEIGHT;
 
 /**
  * Stdout for Flight Factory. Supports formatting codes.
@@ -38,10 +38,12 @@ void outln_ctr(std::string k_data);
 /**
  * Prints a horizontal rule.
  *
- * @param code formatting code
- * @param c    rule character
+ * @param code   formatting code
+ * @param c      rule character
+ * @param title  title text (optional)
+ * @param align  percentage dictating where in the rule the title floats
  */
-void br(std::string code, char c);
+void br(std::string code, char c, std::string title = "", float align = 0);
 
 } // namespace ff
 

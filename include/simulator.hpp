@@ -1,26 +1,13 @@
 #ifndef FLIGHT_FACTORY_SIMULATOR_HPP
 #define FLIGHT_FACTORY_SIMULATOR_HPP
 
+#include <map>
+
 #include "aimbot.hpp"
 #include "barometer.h"
+#include "configuration.hpp"
 #include "imu.h"
-
-enum SimulatorType {
-  DOF1
-};
-
-enum SimulatorStopCondition {
-  STOP_CONDITION_APOGEE,
-  STOP_CONDITION_IMPACT
-};
-
-struct SimulatorConfiguration {
-  SimulatorType type;
-  SimulatorStopCondition stop_condition;
-  float initial_altitude;
-  float t_ignition;
-  float dt;
-};
+#include "parser.hpp"
 
 struct FlightReport {
   aimbot::state_t rocket_state;
@@ -34,6 +21,10 @@ struct FlightReport {
 
 class Simulator {
 protected:
+  std::map<std::string, float> m_parameters;
+  aimbot::AirbrakeModel* m_airbrake_model;
+  aimbot::CdModel* m_cd_model;
+
   float m_t_sim;
   float m_t_apogee;
   float m_apogee;
@@ -42,13 +33,13 @@ protected:
   bool m_running;
 
 public:
-  Simulator();
+  Simulator(const FlightFactoryConfiguration& k_config);
 
   virtual void run(float dt) = 0;
 
-  virtual photonic::ImuData get_imu_data() = 0;
+  virtual photic::ImuData get_imu_data() = 0;
 
-  virtual photonic::BarometerData get_barometer_data() = 0;
+  virtual photic::BarometerData get_barometer_data() = 0;
 
   virtual aimbot::state_t get_rocket_state() = 0;
 
@@ -59,6 +50,8 @@ public:
   float get_time();
 
   bool is_running();
+
+  float& operator[](std::string k_key);
 };
 
 #endif
