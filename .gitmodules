@@ -1,3 +1,6 @@
 [submodule "aimbot"]
 	path = aimbot
 	url = https://github.com/longhorn-rocketry/aimbot
+[submodule "photic"]
+	path = photic
+	url = https://github.com/longhorn-rocketry/photic
