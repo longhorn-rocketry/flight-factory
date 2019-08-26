@@ -15,7 +15,7 @@ static const std::string gUNIT_ACCEL = gUNIT_VELOCITY + "^2";
 static const std::string gFC_CONFIG_NAME = ".ff";
 
 static const float gMETERS_TO_FEET = 3.28084;
-static const float gBOOTUP_DURATION = 1.0;
+static const float gBOOTUP_DURATION = 5.0;
 
 static bool g_ff_initialized = false;
 
@@ -25,25 +25,24 @@ FlightFactoryConfiguration g_ff_config;
 std::string g_ff_fc_path;
 
 static const std::vector<std::string> gBOOTUP_ASCII = {
-  "                            ./////:",
-  "          +my:`             oMMNsMm",
-  "   `:+`   /MMMNo.           oMdNNMm",
-  ".ohNdNh.  .smMMMNo`         sM:-dMm",
-  "/NMNdmMm+ymd:mMMNMm/        dMoyNMm",
-  " -mMo+sMMd:`sMMo-:dMy`     /MMMmoNm",
-  "  `hN/oMNNo `dMo-:dMNh.   /NmMM+`Nm",
-  "   `sNNM++Ny``hNNMM+yyo/oyh/oMmMdMm",
-  "     +NMyoyMd-:yohMhyyyys-  oM/:dMm",
-  "      :mMddmNNNh++MMMMMMMy- oM+sNMm",
-  "       .dm:.mMM+ :NMMMMMMMNy+hNNsMm",
-  "        `yNyMNoNs`:MMMMMMMMMNds- Nm",
-  "          oMMy-+Nh`yMMMMMMMMNmNmosy",
-  "           /NMNNMMm-MMMMMMMh/h:-+s:",
-  "            -NN/:yMoyMM+.:hN-M/+mNd",
-  "           +mMMN:dMN:Mh    ./MNMhMm",
-  "          /NNNNNNNNN/y-     oMMNmMm"
+  "           /o-             .MMNmNM",
+  "    `.    hMMd+`           .MMMhmM",
+  "`.+ymN/   +mMMMNo`         -My/mMM",
+  "+MMNyNMo-+hsoMMMMm/        +Ms-hMM",
+  " +NNyhmMMd+:yMNs+yMy.      dMNMdmM",
+  "  :Nh`oMMd. +Mm.`-MMm-   `sNMMs`hM",
+  "   -dmNM+dm: oMNmNNsys--+hh/MNNhmM",
+  "    `hMN+/dN/ +ssMm+yhhho- .My/dMM",
+  "     `sMMmmMMdmd/hMMNmmNy- .Ms:hMM",
+  "       +Ny-:MMm.`hMMMMMMMNs:hNNdNM",
+  "        :mhyMdmd.`dMMMMMMMMNhs/`hM",
+  "         .dMM/.hN:.MMMMMMMMMMMd+om",
+  "          `yMNNmMN/hMMMMMMN/y+/+s:",
+  "            oMh/oNN:MMd/:yM:ms-yNN",
+  "           omMMy-MM+dM-   .-mNMmNM",
+  "          sMMMMMMMMm:h     .MMMdNM"
 };
-static const std::string gBOOTUP_VERSION = "Version 0.1.1 $bAvaritia";
+static const std::string gBOOTUP_VERSION = "Version 0.2.1 $yAvaritia";
 static const std::string gBOOTUP_COPYRIGHT = "(c) 2019 Longhorn Rocketry Association";
 
 namespace {
@@ -80,6 +79,15 @@ namespace {
     TELEM("Apogee relative to GL: #b$c" + std::to_string(apogee) + "#r "
           + gUNIT_DISPLACEMENT + " (#b$c" + std::to_string(apogee_ft)
           + "#r ft)");
+
+    float apogee_target = g_ff_config.simulation.target_altitude;
+    float apogee_accuracy =
+      (1 - fabs(rep.apogee - apogee_target) / apogee_target) * 100;
+
+    outln(
+      std::string("[#b$raimbot#r] Airbrake accuracy: #b$c" +
+      std::to_string(apogee_accuracy)) + "%"
+    );
 
     float max_mach = rep.max_velocity / aimbot::gMACH1;
     float max_g = rep.max_acceleration / atmos::gravity_at(0);

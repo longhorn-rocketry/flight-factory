@@ -63,6 +63,8 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
             config.simulation.type = DOF1;
         } else if (key == "initial_altitude") {
           config.simulation.initial_altitude = std::stof(value);
+        } else if (key == "target_altitude") {
+          config.simulation.target_altitude = std::stof(value);
         } else if (key == "t_ignition") {
           config.simulation.t_ignition = std::stof(value);
         } else if (key == "dt") {

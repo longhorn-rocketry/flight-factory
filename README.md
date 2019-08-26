@@ -89,39 +89,38 @@ describes the simulation and the rocket being simulated.
 
 Configuration files follow the basic INI format, with a few exceptions. Valid
 sections and keys are as follows:
-* `simulation` - simulator and environment parameters
-  - `initial_altitude` - launchpad altitude
-  - `type` - one of (`dof1`); simulator type
-  - `t_ignition` - time of motor ignition
-  - `dt` - time resolution
-  - `stop_condition` - one of (`impact`, `apogee`); simulation stop event
-* `rocket` - physical rocket properties
-  - `mass` - mass without motors
-  - `radius` - body tube radius
-  - `surface_area` - surface area exposed to air stream; `auto` uses body tube
+* `simulation` - Simulator and environment parameters
+  - `initial_altitude` - Launchpad altitude
+  - `target_altitude` - Target altitude
+  - `type` - One of (`dof1`); simulator type
+  - `t_ignition` - Time of motor ignition
+  - `dt` - Time resolution
+  - `stop_condition` - One of (`impact`, `apogee`); simulation stop event
+* `rocket` - Physical rocket properties
+  - `mass` - Mass without motors
+  - `radius` - Body tube radius
+  - `surface_area` - Surface area exposed to air stream; `auto` uses body tube
     cross section
-  - `airbrake_surface_area` - airbrake surface area exposed to air stream at
+  - `airbrake_surface_area` - Airbrake surface area exposed to air stream at
     100% extension
-  - `drag_coefficient` - static rocket Cd or one of (`profile`, `plane`) for
+  - `drag_coefficient` - Static rocket Cd or one of (`profile`, `plane`) for
     profiled and planar Cd scheduling, respectively (see relevant sections)
-  - `nose_cone_length` - length of nose cone
-  - `fineness` - rocket fineness ratio
-  - `skin_roughness` - rocket skin finish
-* `cd_profile` - rocket drag coefficient profile
+  - `nose_cone_length` - Length of nose cone
+  - `fineness` - Rocket fineness ratio
+  - `skin_roughness` - Rocket skin finish
+* `cd_profile` - Rocket drag coefficient profile
   - A list of `M Cd` pairs with monotonically increasing Mach numbers `M`
     mapped to drag coefficients `Cd`
-* `cd_plane` - rocket drag coefficient plane
-  - `src` - fully-qualified path to plane source file (exactly how this works
+* `cd_plane` - Rocket drag coefficient plane
+  - `src` - Fully-qualified path to plane source file (exactly how this works
     is some secret sauce)
-* `motor` - physical motor properties
-  - `wet_mass` - loaded mass
-  - `dry_mass` - burnout mass
+* `motor` - Physical motor properties
+  - `wet_mass` - Loaded mass
+  - `dry_mass` - Burnout mass
   - A list of `t F` pairs with monotonically increasing timesteps `t` mapped to
     thrust scalars `F`
 
-Lines which begin with `#` are comments.
-
-For reference, below is the config file for Torchy, LRA's 2019 SAC rocket.
+Lines which begin with `#` are comments. An example config file is shown below.
 
 ```
 [simulation]
@@ -198,6 +197,7 @@ post-simulation with a host of logging methods in the `ff` namespace. Telemetry
 streams are assigned names and piped to files in `/path/to/sketch/telem`.
 
 ```c++
+#include "ff_arduino_harness.hpp"
 #include "ff_telemetry.hpp"
 
 ...

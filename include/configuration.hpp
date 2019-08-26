@@ -28,6 +28,7 @@ struct SimulatorConfiguration {
   SimulatorType type;
   SimulatorStopCondition stop_condition;
   float initial_altitude;
+  float target_altitude;
   float t_ignition;
   float dt;
   CdModel cd_model_type;

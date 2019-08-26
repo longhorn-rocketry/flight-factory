@@ -14,6 +14,7 @@ struct FlightReport {
   float rocket_acceleration;
   float flight_duration;
   float apogee;
+  float target_apogee;
   float time_to_apogee;
   float max_acceleration;
   float max_velocity;
