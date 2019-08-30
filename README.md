@@ -178,9 +178,11 @@ For example:
 ```c++
 #define GROUND_TEST // TODO: REMOVE BEFORE FLIGHT
 
+#include "ff_arduino_harness.hpp" // Contains Arduino overloads
+
 ...
 
-Imu *imu =
+photic::Imu *imu =
 #ifdef GROUND_TEST
   // A fake IMU attached to the Flight Factory simulation
   new VirtualImu();
@@ -197,11 +199,6 @@ post-simulation with a host of logging methods in the `ff` namespace. Telemetry
 streams are assigned names and piped to files in `/path/to/sketch/telem`.
 
 ```c++
-#include "ff_arduino_harness.hpp"
-#include "ff_telemetry.hpp"
-
-...
-
 // Causes /path/to/sketch/telem/accel.dat to populate
 ff::topen("accel");
 
