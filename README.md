@@ -2,7 +2,7 @@
 
 > May Lars Blackmore render our convexification lossless.
 
-Flight Factory is LRA's workbench for developing avionics software. It is primarily a flight simulator that interfaces with Arduino sketches and allows for hardware-free ground testing of production flight software.
+Flight Factory is LRA's workbench for developing avionics software. It is fundamentally a flight simulator that interfaces with Arduino sketches to allow hardware-free ground testing of production flight software.
 
 ![We fly high, no lie.](https://stefandebruyn.github.io/assets/images/flight-factory-banner.png)
 
