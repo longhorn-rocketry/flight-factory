@@ -26,6 +26,9 @@ void Dof1Simulator::reset() {
   m_motor_burning = false;
   m_running = true;
   m_t_sim = 0;
+  m_max_accel = 0;
+  m_max_velocity = 0;
+  m_apogee = INITIAL_ALTITUDE;
 
   m_parameters["airbrake_extension"] = 0.0;
 }
@@ -58,6 +61,8 @@ void Dof1Simulator::compute_rocket_acceleration() {
 
   // Apply acceleration vector
   ACCEL += (thrust - drag) / rocket_mass;
+  // Add in noise
+  ACCEL += GEN_NOISE(ff::g_ff_config.noise.physics_accel);
   m_motor_burning = thrust > 0;
 }
 
@@ -107,7 +112,8 @@ photic::ImuData Dof1Simulator::get_imu_data() {
 
   data.ax = 0;
   data.ay = 0;
-  data.az = ACCEL / atmos::gravity_at(0);
+  data.az = ACCEL / atmos::gravity_at(0)
+            + GEN_NOISE(ff::g_ff_config.noise.sensor_accel);
   data.gx = 0;
   data.gy = 0;
   data.gz = 0;
@@ -122,8 +128,10 @@ photic::BarometerData Dof1Simulator::get_barometer_data() {
   photic::BarometerData data;
 
   data.altitude = ALTITUDE;
-  data.pressure = atmos::pressure_at(data.altitude);
-  data.temperature = atmos::temperature_at(data.altitude);
+  data.pressure = atmos::pressure_at(data.altitude)
+                  + GEN_NOISE(ff::g_ff_config.noise.sensor_pressure);
+  data.temperature = atmos::temperature_at(data.altitude)
+                     + GEN_NOISE(ff::g_ff_config.noise.sensor_temperature);
 
   return data;
 }

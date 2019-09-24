@@ -3,6 +3,7 @@
 
 #include "aimbot.hpp"
 #include "motor.hpp"
+#include "noise_generators.hpp"
 
 enum SimulatorType {
   DOF1
@@ -37,8 +38,16 @@ struct SimulatorConfiguration {
   aimbot::cd_plane_t cd_plane;
 };
 
+struct NoiseConfiguration {
+  NoiseGenerator* sensor_accel = nullptr;
+  NoiseGenerator* sensor_pressure = nullptr;
+  NoiseGenerator* sensor_temperature = nullptr;
+  NoiseGenerator* physics_accel = nullptr;
+};
+
 struct FlightFactoryConfiguration {
   SimulatorConfiguration simulation;
+  NoiseConfiguration noise;
   aimbot::rocket_t rocket;
   motor_t motor;
 };

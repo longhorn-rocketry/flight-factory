@@ -15,7 +15,7 @@ static const std::string gUNIT_ACCEL = gUNIT_VELOCITY + "^2";
 static const std::string gFC_CONFIG_NAME = ".ff";
 
 static const float gMETERS_TO_FEET = 3.28084;
-static const float gBOOTUP_DURATION = 5.0;
+static const float gBOOTUP_DURATION = 1.0;
 
 static bool g_ff_initialized = false;
 
@@ -42,7 +42,7 @@ static const std::vector<std::string> gBOOTUP_ASCII = {
   "           omMMy-MM+dM-   .-mNMmNM",
   "          sMMMMMMMMm:h     .MMMdNM"
 };
-static const std::string gBOOTUP_VERSION = "Version 0.2.1 $yAvaritia";
+static const std::string gBOOTUP_VERSION = "Version 0.2.2 $yAvaritia";
 static const std::string gBOOTUP_COPYRIGHT = "(c) 2019 Longhorn Rocketry Association";
 
 namespace {

@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -17,16 +18,42 @@ static const std::string gSECTION_ROCKET = "rocket";
 static const std::string gSECTION_CD_PROFILE = "cd_profile";
 static const std::string gSECTION_CD_PLANE = "cd_plane";
 static const std::string gSECTION_MOTOR_PROFILE = "motor";
+static const std::string gSECTION_NOISE = "noise";
 
 namespace {
-  void parse_pairing(const std::string& line,
-                     std::string& key,
-                     std::string& value,
-                     char delim)
+  void parse_pairing(const std::string& k_line,
+                     std::string& k_key,
+                     std::string& k_value,
+                     char k_delim)
   {
-    unsigned int delim_index = line.find(delim);
-    key = line.substr(0, delim_index);
-    value = line.substr(delim_index + 1, line.size() - delim_index - 1);
+    unsigned int delim_index = k_line.find(k_delim);
+    k_key = k_line.substr(0, delim_index);
+    k_value = k_line.substr(delim_index + 1, k_line.size() - delim_index - 1);
+  }
+
+  void parse_args(const std::string& k_value,
+                  std::vector<std::string>& k_args)
+  {
+    std::stringstream ss(k_value);
+    while (ss.good()) {
+      std::string arg;
+      ss >> arg;
+      k_args.push_back(arg);
+    }
+  }
+
+  NoiseGenerator* make_noise_gen(const std::vector<std::string>& k_args) {
+    if (k_args[0] == "normal") {
+      float var = std::stof(k_args[1]);
+      float mean = std::stof(k_args[2]);
+      return new NormalNoiseGenerator(var, mean);
+    } else if (k_args[0] == "uniform") {
+      float lower = std::stof(k_args[1]);
+      float upper = std::stof(k_args[2]);
+      return new UniformNoiseGenerator(lower, upper);
+    }
+
+    return nullptr;
   }
 }
 
@@ -149,6 +176,26 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
 
         if (key == "src")
           parse_cd_plane(value, config);
+      // Noise generators
+      } else if (current_section == gSECTION_NOISE) {
+        parse_pairing(line, key, value, '=');
+
+        std::vector<std::string> args;
+        parse_args(value, args);
+
+        NoiseGenerator** destination;
+        NoiseGenerator* gen = make_noise_gen(args);
+
+        if (key == "sensor_accel")
+          destination = &config.noise.sensor_accel;
+        else if (key == "sensor_pressure")
+          destination = &config.noise.sensor_pressure;
+        else if (key == "sensor_temperature")
+          destination = &config.noise.sensor_temperature;
+        else if (key == "physics_accel")
+          destination = &config.noise.physics_accel;
+
+        *destination = gen;
       }
     }
   }

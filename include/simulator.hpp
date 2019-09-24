@@ -9,6 +9,8 @@
 #include "imu.h"
 #include "parser.hpp"
 
+#define GEN_NOISE(gen_ptr) (gen_ptr == nullptr ? 0 : gen_ptr->get())
+
 struct FlightReport {
   aimbot::state_t rocket_state;
   float rocket_acceleration;
