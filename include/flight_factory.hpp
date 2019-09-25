@@ -1,3 +1,6 @@
+/**
+ * Centermost module where the simulator lives.
+ */
 #ifndef FLIGHT_FACTORY
 #define FLIGHT_FACTORY
 
@@ -29,15 +32,20 @@ extern std::string g_ff_fc_path;
 /**
  * Flight Factory core initialiation.
  *
- * @param k_argc      system argument count
- * @param k_argv      system argument array
+ * @param   k_argc system argument count
+ * @param   k_argv system argument array
  */
 void init(int k_argc, char** k_argv);
 
 /**
- * @brief runs a simulation
+ * @brief Runs a simulation. Must be preceded by init().
  */
 void run();
+
+/**
+ * @brief One-line init and run.
+ */
+void launch(int k_argc, char** k_argv);
 
 } // namespace ff
 

@@ -21,6 +21,14 @@ static const std::string gSECTION_MOTOR_PROFILE = "motor";
 static const std::string gSECTION_NOISE = "noise";
 
 namespace {
+  /**
+   * Parses a key-value pair from a config file line.
+   *
+   * @param   k_line  line to parse
+   * @param   k_key   destination for value
+   * @param   k_value destination for value
+   * @param   k_delim pair delimiting character
+   */
   void parse_pairing(const std::string& k_line,
                      std::string& k_key,
                      std::string& k_value,
@@ -31,6 +39,12 @@ namespace {
     k_value = k_line.substr(delim_index + 1, k_line.size() - delim_index - 1);
   }
 
+  /**
+   * Parse arguments from a complex config value.
+   *
+   * @param   k_value pair value with space-delimited args
+   * @param   k_args  args destination
+   */
   void parse_args(const std::string& k_value,
                   std::vector<std::string>& k_args)
   {
@@ -42,6 +56,9 @@ namespace {
     }
   }
 
+  /**
+   * @brief Makes a new noise generator from argumnts retrieved by parse_args().
+   */
   NoiseGenerator* make_noise_gen(const std::vector<std::string>& k_args) {
     if (k_args[0] == "normal") {
       float var = std::stof(k_args[1]);
@@ -68,16 +85,20 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
   std::vector<std::pair<float, float>> motor_profile;
 
   while (std::getline(in, line)) {
+    // Skip empty lines
     if (line.size() == 0)
       continue;
 
     char c = line.at(0);
 
+    // Skip comments
     if (c == gCOMMENT)
       continue;
+    // Line marks the start of a new section
     else if (c == gSECTION_NAME_OPEN) {
       unsigned int closing_index = line.find(gSECTION_NAME_CLOSE, 1);
       current_section = line.substr(1, closing_index - 1);
+    // Line contains data for the section currently being traversed
     } else {
       std::string key, value;
 
@@ -109,7 +130,8 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
           else if (value == "planar")
             config.simulation.cd_model_type = CD_MODEL_PLANAR;
           else
-            TELEM("$rWarning: unknown Cd model \"" + value + "\"; using static");
+            TELEM("$rWarning: unknown Cd model \"" + value
+                  + "\"; using static");
         } else if (key == "airbrake_model") {
           if (value == "static")
             config.simulation.airbrake_model_type = AIRBRAKE_MODEL_STATIC;
@@ -117,7 +139,8 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
             config.simulation.airbrake_model_type =
                 AIRBRAKE_MODEL_AIRFLOW_DEFLECTION;
           else
-            TELEM("$rWarning: unknown airbrake model \"" + value + "\"; using static");
+            TELEM("$rWarning: unknown airbrake model \"" + value
+                  + "\"; using static");
         }
       // Rocket parameters
       } else if (current_section == gSECTION_ROCKET) {
@@ -210,7 +233,8 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
       {cd_profile[i].first, cd_profile[i].second};
 
   if (cd_profile.size() > 0)
-    TELEM("Parsed Cd profile with " + std::to_string(cd_profile.size()) + " events");
+    TELEM("Parsed Cd profile with " + std::to_string(cd_profile.size())
+          + " events");
 
   config.motor.thrust_profile.events =
       new thrust_event_t[motor_profile.size()];
@@ -223,7 +247,8 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
   if (motor_profile.size() > 0) {
     config.motor.burn_time = motor_profile[motor_profile.size() - 1].first;
 
-    TELEM("Parsed thrust profile with " + std::to_string(motor_profile.size()) + " events");
+    TELEM("Parsed thrust profile with " + std::to_string(motor_profile.size())
+          + " events");
   }
 
   return config;

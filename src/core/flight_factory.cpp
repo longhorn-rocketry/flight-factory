@@ -7,16 +7,18 @@
 
 namespace ff {
 
+/**
+ * Metric units are used for all flight statistics so as to conform with
+ * Aimbot's Standard Atmosphere.
+ */
 static const std::string gUNIT_DISPLACEMENT = "m";
 static const std::string gUNIT_TIME = "s";
 static const std::string gUNIT_VELOCITY = gUNIT_DISPLACEMENT + "/" + gUNIT_TIME;
 static const std::string gUNIT_ACCEL = gUNIT_VELOCITY + "^2";
 
 static const std::string gFC_CONFIG_NAME = ".ff";
-
 static const float gMETERS_TO_FEET = 3.28084;
 static const float gBOOTUP_DURATION = 1.0;
-
 static bool g_ff_initialized = false;
 
 Simulator* g_ff_simulator = nullptr;
@@ -46,12 +48,11 @@ static const std::string gBOOTUP_VERSION = "Version 0.2.2 $yAvaritia";
 static const std::string gBOOTUP_COPYRIGHT = "(c) 2019 Longhorn Rocketry Association";
 
 namespace {
-
   /**
-   * @brief emulate the Arduino sketch
+   * @brief Run the integrated flight computer through a simulated flight.
    */
   static void run_sketch() {
-    br("#b$w", '=', " #b$g>>> #b$wENTERING SIMULATION ", 0.08);
+    br("#b$w", '=', " #b$g>>> #b$wENTERING SIMULATION ", 0);
 
     // Initialize rocket FC
     setup();
@@ -62,7 +63,7 @@ namespace {
       loop();
     }
 
-    br("#b$w", '=', " $g<<< #b$wLEAVING SIMULATION  ", 0.08);
+    br("#b$w", '=', " $g<<< #b$wLEAVING SIMULATION  ", 0);
 
     // Print flight report
     FlightReport rep = g_ff_simulator->get_report();
@@ -70,7 +71,7 @@ namespace {
           std::to_string(rep.rocket_state.altitude) + "#r, $y" +
           std::to_string(rep.rocket_state.velocity) + "#r, $y" +
           std::to_string(rep.rocket_acceleration) + "#r>");
-    TELEM("Flight duration: $y" + std::to_string(rep.flight_duration) + "#r "
+    TELEM("Simulation duration: $y" + std::to_string(rep.flight_duration) + "#r "
           + gUNIT_TIME);
 
     float apogee = rep.apogee - g_ff_config.simulation.initial_altitude;
@@ -113,7 +114,7 @@ namespace {
   }
 
   /**
-   * @brief displays the boot screen and runs the sim after a short time
+   * @brief Displays the boot screen and runs the sim after a short time.
    */
   static void boot() {
     system("clear");
@@ -142,12 +143,6 @@ namespace {
   }
 }
 
-/**
- * Initializes ffcore. This must be called before run.
- *
- * @param k_argc      system arguments count
- * @param k_argv      system arguments
- */
 void init(int k_argc, char** k_argv) {
   g_ff_initialized = true;
 
@@ -173,9 +168,6 @@ void init(int k_argc, char** k_argv) {
   }
 }
 
-/**
- * @brief runs a simulation for the sketch provided at startup
- */
 void run() {
   if (!g_ff_initialized) {
     TELEM("$rFATAL: Cannot run simulation; Flight Factory is not initialized");
@@ -183,6 +175,11 @@ void run() {
   }
 
   run_sketch();
+}
+
+void launch(int k_argc, char** k_argv) {
+  init(k_argc, k_argv);
+  run();
 }
 
 } // namespace ff

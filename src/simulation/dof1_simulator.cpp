@@ -19,6 +19,7 @@ Dof1Simulator::Dof1Simulator(const FlightFactoryConfiguration& k_config) :
 }
 
 void Dof1Simulator::reset() {
+  // Set vehicle to motionless on launchpad
   ALTITUDE = INITIAL_ALTITUDE;
   VELOCITY = 0;
   ACCEL = 0;
@@ -30,6 +31,7 @@ void Dof1Simulator::reset() {
   m_max_velocity = 0;
   m_apogee = INITIAL_ALTITUDE;
 
+  // Airbrake is retracted by default
   m_parameters["airbrake_extension"] = 0.0;
 }
 
@@ -71,29 +73,35 @@ void Dof1Simulator::run(float dt) {
 
   compute_rocket_acceleration();
 
+  // Mark record high acceleration
   if (fabs(m_rocket_acceleration) > m_max_accel)
     m_max_accel = fabs(m_rocket_acceleration);
 
+  // Advance state using simple Euler's method
   VELOCITY += ACCEL * dt;
   ALTITUDE += VELOCITY * dt;
 
+  // Mark record high velocity
   if (fabs(VELOCITY) > m_max_velocity)
     m_max_velocity = fabs(VELOCITY);
 
+  // Prevent rocket from falling during first moments of motor burn
   if (m_motor_burning) {
     if (VELOCITY < 0)
       VELOCITY = 0;
   }
 
+  // Prevent rocket from falling through the ground
   if (ALTITUDE < INITIAL_ALTITUDE)
     ALTITUDE = INITIAL_ALTITUDE;
 
+  // Mark record high altitude
   if (ALTITUDE > m_apogee) {
     m_apogee = ALTITUDE;
     m_t_apogee = m_t_sim;
   }
 
-  // Stop conditions
+  // Evaluate stop conditions
   if (ff::g_ff_config.simulation.stop_condition == STOP_CONDITION_APOGEE &&
       VELOCITY <= 0 &&
       m_t_sim > T_NO_STOP)

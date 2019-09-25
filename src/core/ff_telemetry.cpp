@@ -4,12 +4,15 @@
 namespace ff {
 
 void topen(std::string k_name) {
+  // Open the file and map the stream for future reads. Note that the stream
+  // remains open until the program is terminated or tclose() is called.
   std::string path = g_ff_fc_path + "/" + g_tout + "/" + k_name + ".dat";
   std::ofstream* out = new std::ofstream(path);
   g_ff_tpipes[k_name] = out;
 }
 
 void tclose(std::string k_name) {
+  // Close and unmap the stream
   std::ofstream* pipe = g_ff_tpipes[k_name];
   pipe->close();
   g_ff_tpipes.erase(g_ff_tpipes.find(k_name));

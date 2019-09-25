@@ -49,12 +49,15 @@ namespace {
     k_offset = 1;
     char c_next = k_data.at(k_start_pos + 1);
 
+    // Code is more than one character
     if (c_next == gMETACHAR_MULTICODE_OPEN) {
       std::size_t open_pos = k_start_pos + 2;
+      // Find the closing brace
       std::size_t close_pos = k_data.find(gMETACHAR_MULTICODE_CLOSE,
                                           k_start_pos);
       k_code = k_data.substr(open_pos, close_pos - open_pos);
       k_offset += k_code.size() + 2;
+    // Code is a single character
     } else {
       k_code += c_next;
       k_offset++;
@@ -65,8 +68,9 @@ namespace {
    * Gets the length of a string not including metacharacters and formatting
    * codes.
    *
-   * @param  k_data string to evaluate
-   * @return        true string length
+   * @param   k_data string to evaluate
+   *
+   * @ret     true string length
    */
   static std::size_t strlen_no_metas(const std::string& k_data) {
     std::size_t pos = 0;
@@ -75,6 +79,7 @@ namespace {
     while (pos < k_data.size()) {
       char c = k_data.at(pos);
 
+      // Jump past metacharacters
       if (c == gMETACHAR_COLOR || c == gMETACHAR_FORMAT) {
         std::string code;
         std::size_t offset;
@@ -99,6 +104,8 @@ void out(std::string k_data) {
   while (pos < k_data.size()) {
     char c = k_data.at(pos);
 
+    // If the char currently being examined is meta, print its equivalent ANSI
+    // escape
     if (c == gMETACHAR_FORMAT) {
       std::string code;
       std::size_t offset;
@@ -117,6 +124,7 @@ void out(std::string k_data) {
       std::string ansi = g_color_codes[code];
       std::cout << "\033[" << format_code << ";" << ansi << "m";
       pos += offset;
+    // Non-meta character
     } else {
       std::cout << c;
       pos++;

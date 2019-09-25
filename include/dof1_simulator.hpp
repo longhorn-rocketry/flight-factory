@@ -1,3 +1,6 @@
+/**
+ * 1 DoF airbrake-aided flight simulator.
+ */
 #ifndef FLIGHT_FACTORY_SIMULATOR_DOF1_HPP
 #define FLIGHT_FACTORY_SIMULATOR_DOF1_HPP
 
@@ -5,6 +8,10 @@
 
 class Dof1Simulator final : public Simulator {
 private:
+  /**
+   * Exact rocket state, marred only by environmental noise. In general, FCs
+   * should be unable to perceive this.
+   */
   aimbot::state_t m_rocket_true_state;
   float m_rocket_acceleration;
   bool m_motor_burning;

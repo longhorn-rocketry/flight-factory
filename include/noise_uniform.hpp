@@ -1,3 +1,7 @@
+/**
+ * Noise generator with a uniform distribution. Uses a Marsenne Twister seeded
+ * with the current system time.
+ */
 #ifndef FLIGHT_FACTORY_NOISE_UNIFORM_HPP
 #define FLIGHT_FACTORY_NOISE_UNIFORM_HPP
 

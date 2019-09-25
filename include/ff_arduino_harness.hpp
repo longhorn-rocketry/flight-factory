@@ -1,3 +1,8 @@
+/**
+ * Main point of integration between simulator and flight computer. Provides
+ * prototypes for Arduino sketch methods and overshadows for certain Arduino
+ * objects.
+ */
 #ifndef FLIGHT_FACTORY_ARDUINO_HARNESS_HPP
 #define FLIGHT_FACTORY_ARDUINO_HARNESS_HPP
 
@@ -11,6 +16,9 @@
 
 #define SIM (*ff::g_ff_simulator)
 
+/**
+ * Overshadow of Arduino's static Serial class.
+ */
 class VirtualSerial {
 public:
   VirtualSerial();
@@ -20,8 +28,14 @@ public:
 
 extern VirtualSerial Serial;
 
+/**
+ * One-time setup function.
+ */
 void setup();
 
+/**
+ * Iterative loop function called as fast as possible following setup().
+ */
 void loop();
 
 #endif
