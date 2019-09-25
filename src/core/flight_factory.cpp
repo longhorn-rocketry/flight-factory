@@ -108,6 +108,7 @@ namespace {
     std::getline(std::cin, in);
 
     if (in != "Q" && in != "q") {
+      photic::reset();
       g_ff_simulator->reset();
       run_sketch();
     }
