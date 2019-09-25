@@ -1,4 +1,7 @@
 #include <map>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 #include "ffio.hpp"
 
@@ -139,7 +142,7 @@ void outln(std::string k_data) {
 }
 
 void outln_ctr(std::string k_data) {
-  std::size_t gutter = (gTERMINAL_WIDTH - strlen_no_metas(k_data)) / 2;
+  std::size_t gutter = (terminal_width() - strlen_no_metas(k_data)) / 2;
 
   for (std::size_t i = 0; i < gutter; i++)
     out(" ");
@@ -149,7 +152,7 @@ void outln_ctr(std::string k_data) {
 
 void br(std::string code, char c, std::string title, float align) {
   std::size_t len = strlen_no_metas(title);
-  std::size_t break_chars = gTERMINAL_WIDTH - len;
+  std::size_t break_chars = terminal_width() - len;
   std::size_t lhs_gutter_chars = break_chars * align;
 
   for (std::size_t i = 0; i < lhs_gutter_chars; i++)
@@ -161,6 +164,22 @@ void br(std::string code, char c, std::string title, float align) {
     out(code + c);
 
   out("\n");
+}
+
+unsigned int terminal_width() {
+  unsigned int cols = 80;
+
+#ifdef TIOCGSIZE
+  struct ttysize ts;
+  ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
+  cols = ts.ts_cols;
+#elif defined(TIOCGWINSZ)
+  struct winsize ts;
+  ioctl(STDIN_FILENO, TIOCGWINSZ, &ts);
+  cols = ts.ws_col;
+#endif
+
+  return cols;
 }
 
 } // namespace ff

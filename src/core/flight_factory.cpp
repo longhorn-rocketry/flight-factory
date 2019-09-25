@@ -51,7 +51,7 @@ namespace {
   /**
    * @brief Run the integrated flight computer through a simulated flight.
    */
-  static void run_sketch() {
+  void run_sketch() {
     br("#b$w", '=', " #b$g>>> #b$wENTERING SIMULATION ", 0);
 
     // Initialize rocket FC
@@ -116,7 +116,7 @@ namespace {
   /**
    * @brief Displays the boot screen and runs the sim after a short time.
    */
-  static void boot() {
+  void boot() {
     system("clear");
 
     std::vector<std::string> bootup_text;

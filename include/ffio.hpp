@@ -48,6 +48,11 @@ void outln_ctr(std::string k_data);
  */
 void br(std::string code, char c, std::string title = "", float align = 0);
 
+/**
+ * @brief Gets the number of columns in the terminal window.
+ */
+unsigned int terminal_width();
+
 } // namespace ff
 
 #endif
