@@ -1,0 +1,50 @@
+[simulation]
+dt=0.1
+stop_condition=apogee
+# Altitude of Truth or Consequences, NM
+initial_altitude=1293.876
+target_altitude=5000
+type=dof1
+t_ignition=1.0
+cd_model=planar
+airbrake_model=airflow_deflection
+
+[rocket]
+mass=23.5
+radius=0.0762
+surface_area=auto
+airbrake_surface_area=0.0070866
+drag_coefficient=0.46
+
+[cd_profile]
+# M/Cd profile derived from OpenRocket
+0 0.46
+0.5 0.55
+0.9 0.67
+1.0 0.91
+1.1 0.76
+1.4 0.55
+2 0.23
+
+[cd_plane]
+src=/home/stefan/flight-factory/seraph/seraph_cdp.dat
+
+[motor]
+# Massing and thrust profile for an N2200-PK
+wet_mass=11.356
+dry_mass=5.048
+0 0
+0.05 2750
+0.2 2450
+1.0 2550
+2.0 2600
+4.0 2200
+4.7 2100
+5.25 500
+6 0
+
+[noise]
+sensor_accel=normal 0.25 0
+sensor_pressure=normal 0.15 0
+sensor_temperature=normal 0.85 0
+physics_accel=normal 0.7 -0.05
