@@ -7,8 +7,6 @@
 #include "ffio.hpp"
 #include "parser.hpp"
 
-#define TELEM(data) ff::outln(std::string("[#b$bffcore#r] ") + data)
-
 static const char gSECTION_NAME_OPEN = '[';
 static const char gSECTION_NAME_CLOSE = ']';
 static const char gCOMMENT = '#';
@@ -130,7 +128,7 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
           else if (value == "planar")
             config.simulation.cd_model_type = CD_MODEL_PLANAR;
           else
-            TELEM("$rWarning: unknown Cd model \"" + value
+            CORE_TELEM("$rWarning: unknown Cd model \"" + value
                   + "\"; using static");
         } else if (key == "airbrake_model") {
           if (value == "static")
@@ -139,7 +137,7 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
             config.simulation.airbrake_model_type =
                 AIRBRAKE_MODEL_AIRFLOW_DEFLECTION;
           else
-            TELEM("$rWarning: unknown airbrake model \"" + value
+            CORE_TELEM("$rWarning: unknown airbrake model \"" + value
                   + "\"; using static");
         }
       // Rocket parameters
@@ -233,7 +231,7 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
       {cd_profile[i].first, cd_profile[i].second};
 
   if (cd_profile.size() > 0)
-    TELEM("Parsed Cd profile with " + std::to_string(cd_profile.size())
+    CORE_TELEM("Parsed Cd profile with " + std::to_string(cd_profile.size())
           + " events");
 
   config.motor.thrust_profile.events =
@@ -247,7 +245,7 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
   if (motor_profile.size() > 0) {
     config.motor.burn_time = motor_profile[motor_profile.size() - 1].first;
 
-    TELEM("Parsed thrust profile with " + std::to_string(motor_profile.size())
+    CORE_TELEM("Parsed thrust profile with " + std::to_string(motor_profile.size())
           + " events");
   }
 
@@ -256,6 +254,12 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
 
 void parse_cd_plane(std::string k_fpath, FlightFactoryConfiguration& k_config) {
   std::ifstream in(k_fpath);
+
+  if (in.fail()) {
+    CORE_TELEM("$rWarning: failed to open " + k_fpath);
+    return;
+  }
+
   std::string line;
   std::string current_section;
   std::vector<float> coeffs;
@@ -300,7 +304,7 @@ void parse_cd_plane(std::string k_fpath, FlightFactoryConfiguration& k_config) {
   for (std::size_t i = 0; i < coeffs.size(); i++)
     k_config.simulation.cd_plane.plane[i] = coeffs[i];
 
-  TELEM("Parsed Cd plane with " + std::to_string(coeffs.size()) + " points");
+  CORE_TELEM("Parsed Cd plane with " + std::to_string(coeffs.size()) + " points");
 
   in.close();
 }

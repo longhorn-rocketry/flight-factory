@@ -3,8 +3,6 @@
 #include "ff_arduino_harness.hpp"
 #include "flight_factory.hpp"
 
-#define TELEM(data) outln(std::string("[#b$bffcore#r] ") + data)
-
 namespace ff {
 
 /**
@@ -52,7 +50,7 @@ namespace {
    * @brief Run the integrated flight computer through a simulated flight.
    */
   void run_sketch() {
-    br("#b$w", '=', " #b$g>>> #b$wENTERING SIMULATION ", 0);
+    br("#b$w", '=', " #b$g>>> #rENTERING SIMULATION ", 0);
 
     // Initialize rocket FC
     setup();
@@ -63,21 +61,21 @@ namespace {
       loop();
     }
 
-    br("#b$w", '=', " $g<<< #b$wLEAVING SIMULATION  ", 0);
+    br("#b$w", '=', " $g<<< #rLEAVING SIMULATION  ", 0);
 
     // Print flight report
     FlightReport rep = g_ff_simulator->get_report();
-    TELEM("Final rocket state: <$y" +
+    CORE_TELEM("Final rocket state: <$y" +
           std::to_string(rep.rocket_state.altitude) + "#r, $y" +
           std::to_string(rep.rocket_state.velocity) + "#r, $y" +
           std::to_string(rep.rocket_acceleration) + "#r>");
-    TELEM("Simulation duration: $y" + std::to_string(rep.flight_duration) + "#r "
+    CORE_TELEM("Simulation duration: $y" + std::to_string(rep.flight_duration) + "#r "
           + gUNIT_TIME);
 
     float apogee = rep.apogee - g_ff_config.simulation.initial_altitude;
     float apogee_ft = apogee * gMETERS_TO_FEET;
 
-    TELEM("Apogee relative to GL: #b$c" + std::to_string(apogee) + "#r "
+    CORE_TELEM("Apogee relative to GL: #b$c" + std::to_string(apogee) + "#r "
           + gUNIT_DISPLACEMENT + " (#b$c" + std::to_string(apogee_ft)
           + "#r ft)");
 
@@ -93,16 +91,16 @@ namespace {
     float max_mach = rep.max_velocity / aimbot::gMACH1;
     float max_g = rep.max_acceleration / atmos::gravity_at(0);
 
-    TELEM("Max velocity: $y" + std::to_string(rep.max_velocity) + "#r "
+    CORE_TELEM("Max velocity: $y" + std::to_string(rep.max_velocity) + "#r "
           + gUNIT_VELOCITY + " ($y" + std::to_string(max_mach) + " #rM)");
-    TELEM("Max acceleration: $y" + std::to_string(rep.max_acceleration) + "#r "
+    CORE_TELEM("Max acceleration: $y" + std::to_string(rep.max_acceleration) + "#r "
           + gUNIT_ACCEL + " ($y" + std::to_string(max_g) + " #rG)");
-    TELEM("Time to apogee: $y" + std::to_string(rep.time_to_apogee) + "#r "
+    CORE_TELEM("Time to apogee: $y" + std::to_string(rep.time_to_apogee) + "#r "
           + gUNIT_TIME);
 
     // Prompt for response
-    TELEM("Enter Q to quit, or any other key to rerun");
-    out("[#b$bffcore#r] > ");
+    CORE_TELEM("Enter Q to quit, or any other key to rerun");
+    out(std::string(CORE_TELEM_TAG) + "> ");
 
     std::string in;
     std::getline(std::cin, in);
@@ -127,7 +125,7 @@ namespace {
     bootup_text.push_back(gBOOTUP_COPYRIGHT);
 
     unsigned int line_count = gBOOTUP_ASCII.size() + bootup_text.size();
-    unsigned int gutter = (gTERMINAL_HEIGHT - line_count) / 2;
+    unsigned int gutter = (get_terminal_height() - line_count) / 2;
 
     for (unsigned int i = 0; i < gutter; i++)
       outln("");
@@ -150,13 +148,13 @@ void init(int k_argc, char** k_argv) {
   boot();
 
   if (k_argc < 2) {
-    TELEM("$rFATAL: No simulation file was provided");
+    CORE_TELEM("$rFATAL: No simulation file was provided");
     exit(1);
   }
 
   g_ff_fc_path = std::string(k_argv[1]);
 
-  TELEM("Loading config from " + g_ff_fc_path + "...");
+  CORE_TELEM("Loading config from " + g_ff_fc_path + "...");
 
   g_ff_config = parse_ff_config(g_ff_fc_path + "/" + gFC_CONFIG_NAME);
 
@@ -164,14 +162,14 @@ void init(int k_argc, char** k_argv) {
     g_ff_simulator = new Dof1Simulator(g_ff_config);
 
   if (g_ff_simulator == nullptr) {
-    TELEM("$rFATAL: No simulator could be built. Possible invalid type?");
+    CORE_TELEM("$rFATAL: No simulator could be built. Possible invalid type?");
     exit(1);
   }
 }
 
 void run() {
   if (!g_ff_initialized) {
-    TELEM("$rFATAL: Cannot run simulation; Flight Factory is not initialized");
+    CORE_TELEM("$rFATAL: Cannot run simulation; Flight Factory is not initialized");
     return;
   }
 

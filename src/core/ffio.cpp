@@ -142,7 +142,7 @@ void outln(std::string k_data) {
 }
 
 void outln_ctr(std::string k_data) {
-  std::size_t gutter = (terminal_width() - strlen_no_metas(k_data)) / 2;
+  std::size_t gutter = (get_terminal_width() - strlen_no_metas(k_data)) / 2;
 
   for (std::size_t i = 0; i < gutter; i++)
     out(" ");
@@ -152,7 +152,7 @@ void outln_ctr(std::string k_data) {
 
 void br(std::string code, char c, std::string title, float align) {
   std::size_t len = strlen_no_metas(title);
-  std::size_t break_chars = terminal_width() - len;
+  std::size_t break_chars = get_terminal_width() - len;
   std::size_t lhs_gutter_chars = break_chars * align;
 
   for (std::size_t i = 0; i < lhs_gutter_chars; i++)
@@ -166,20 +166,30 @@ void br(std::string code, char c, std::string title, float align) {
   out("\n");
 }
 
-unsigned int terminal_width() {
-  unsigned int cols = 80;
+std::pair<unsigned int, unsigned int> get_terminal_size() {
+  unsigned int rows, cols;
 
 #ifdef TIOCGSIZE
   struct ttysize ts;
   ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
+  rows = ts.ts_rows;
   cols = ts.ts_cols;
 #elif defined(TIOCGWINSZ)
   struct winsize ts;
   ioctl(STDIN_FILENO, TIOCGWINSZ, &ts);
+  rows = ts.ws_row;
   cols = ts.ws_col;
 #endif
 
-  return cols;
+  return {rows, cols};
+}
+
+unsigned int get_terminal_width() {
+  return get_terminal_size().second;
+}
+
+unsigned int get_terminal_height() {
+  return get_terminal_size().first;
 }
 
 } // namespace ff

@@ -6,6 +6,9 @@
 
 #include <iostream>
 
+#define CORE_TELEM_TAG "[#b$wffcore#r] "
+#define CORE_TELEM(data) ff::outln(std::string(CORE_TELEM_TAG) + data)
+
 namespace ff {
 
 extern const std::size_t gTERMINAL_WIDTH;
@@ -49,9 +52,19 @@ void outln_ctr(std::string k_data);
 void br(std::string code, char c, std::string title = "", float align = 0);
 
 /**
- * @brief Gets the number of columns in the terminal window.
+ * @brief Get the size of the terminal in the form (rows, cols).
  */
-unsigned int terminal_width();
+std::pair<unsigned int, unsigned int> get_terminal_size();
+
+/**
+ * @brief Gets the current number of columns in the terminal.
+ */
+unsigned int get_terminal_width();
+
+/**
+ * @brief Gets teh current number of rows in the terminal.
+ */
+unsigned int get_terminal_height();
 
 } // namespace ff
 
