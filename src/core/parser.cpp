@@ -231,8 +231,7 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
       {cd_profile[i].first, cd_profile[i].second};
 
   if (cd_profile.size() > 0)
-    CORE_TELEM("Parsed Cd profile with " + std::to_string(cd_profile.size())
-          + " events");
+    CORE_TELEM("Parsed Cd profile with %d events", cd_profile.size());
 
   config.motor.thrust_profile.events =
       new thrust_event_t[motor_profile.size()];
@@ -245,8 +244,7 @@ FlightFactoryConfiguration parse_ff_config(std::string k_fpath) {
   if (motor_profile.size() > 0) {
     config.motor.burn_time = motor_profile[motor_profile.size() - 1].first;
 
-    CORE_TELEM("Parsed thrust profile with " + std::to_string(motor_profile.size())
-          + " events");
+    CORE_TELEM("Parsed thrust profile with %d events", motor_profile.size());
   }
 
   return config;
@@ -304,7 +302,7 @@ void parse_cd_plane(std::string k_fpath, FlightFactoryConfiguration& k_config) {
   for (std::size_t i = 0; i < coeffs.size(); i++)
     k_config.simulation.cd_plane.plane[i] = coeffs[i];
 
-  CORE_TELEM("Parsed Cd plane with " + std::to_string(coeffs.size()) + " points");
+  CORE_TELEM("Parsed Cd plane with %d points", coeffs.size());
 
   in.close();
 }

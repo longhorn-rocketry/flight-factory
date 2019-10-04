@@ -7,12 +7,25 @@
 #include <iostream>
 
 #define CORE_TELEM_TAG "[#b$wffcore#r] "
-#define CORE_TELEM(data) ff::outln(std::string(CORE_TELEM_TAG) + data)
+#define CORE_TELEM(data, ...) {                                                \
+  ff::out(CORE_TELEM_TAG);                                                     \
+  ff::out(data, ##__VA_ARGS__);                                                \
+  ff::out("\n");                                                               \
+}
 
 namespace ff {
 
 extern const std::size_t gTERMINAL_WIDTH;
 extern const std::size_t gTERMINAL_HEIGHT;
+
+/**
+ * printf-style output with formatting code support.
+ *
+ *
+ * @param k_fmt     format string
+ * @param VARARGS   format args
+ */
+void out(char* k_fmt, ...);
 
 /**
  * Stdout for Flight Factory. Supports formatting codes.

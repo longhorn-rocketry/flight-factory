@@ -50,7 +50,7 @@ namespace {
    * @brief Run the integrated flight computer through a simulated flight.
    */
   void run_sketch() {
-    br("#b$w", '=', " #b$g>>> #rENTERING SIMULATION ", 0);
+    br("#b$w", '=', " #b$g>>> ENTERING SIMULATION ", 0);
 
     // Initialize rocket FC
     setup();
@@ -61,42 +61,46 @@ namespace {
       loop();
     }
 
-    br("#b$w", '=', " $g<<< #rLEAVING SIMULATION  ", 0);
+    br("#b$w", '=', " $g<<< LEAVING SIMULATION ", 0);
 
     // Print flight report
     FlightReport rep = g_ff_simulator->get_report();
-    CORE_TELEM("Final rocket state: <$y" +
-          std::to_string(rep.rocket_state.altitude) + "#r, $y" +
-          std::to_string(rep.rocket_state.velocity) + "#r, $y" +
-          std::to_string(rep.rocket_acceleration) + "#r>");
-    CORE_TELEM("Simulation duration: $y" + std::to_string(rep.flight_duration) + "#r "
-          + gUNIT_TIME);
+    CORE_TELEM("Final rocket state: <$y%f#r, $y%f#r, $y%f#r>",
+               rep.rocket_state.altitude,
+               rep.rocket_state.velocity,
+               rep.rocket_acceleration);
+    CORE_TELEM("Simulation duration: $y%f#r %s",
+               rep.flight_duration,
+               gUNIT_TIME.c_str());
 
     float apogee = rep.apogee - g_ff_config.simulation.initial_altitude;
     float apogee_ft = apogee * gMETERS_TO_FEET;
 
-    CORE_TELEM("Apogee relative to GL: #b$c" + std::to_string(apogee) + "#r "
-          + gUNIT_DISPLACEMENT + " (#b$c" + std::to_string(apogee_ft)
-          + "#r ft)");
+    CORE_TELEM("Apogee relative to GL: #b$c%f#r %s (#b$c%f#r ft)",
+               apogee,
+               gUNIT_DISPLACEMENT.c_str(),
+               apogee_ft);
 
     float apogee_target = g_ff_config.simulation.target_altitude;
     float apogee_accuracy =
       (1 - fabs(rep.apogee - apogee_target) / apogee_target) * 100;
 
-    outln(
-      std::string("[#b$raimbot#r] Airbrake accuracy: #b$c" +
-      std::to_string(apogee_accuracy)) + "%"
-    );
+    out("[#b$raimbot#r] Airbrake accuracy: #b$c%f\%\n", apogee_accuracy);
 
     float max_mach = rep.max_velocity / aimbot::gMACH1;
     float max_g = rep.max_acceleration / atmos::gravity_at(0);
 
-    CORE_TELEM("Max velocity: $y" + std::to_string(rep.max_velocity) + "#r "
-          + gUNIT_VELOCITY + " ($y" + std::to_string(max_mach) + " #rM)");
-    CORE_TELEM("Max acceleration: $y" + std::to_string(rep.max_acceleration) + "#r "
-          + gUNIT_ACCEL + " ($y" + std::to_string(max_g) + " #rG)");
-    CORE_TELEM("Time to apogee: $y" + std::to_string(rep.time_to_apogee) + "#r "
-          + gUNIT_TIME);
+    CORE_TELEM("Max velocity: $y%f#r %s ($y%f#r M)",
+               rep.max_velocity,
+               gUNIT_VELOCITY.c_str(),
+               max_mach);
+    CORE_TELEM("Max acceleration: $y%f#r %s ($y%f#r G)",
+               rep.max_acceleration,
+               gUNIT_ACCEL.c_str(),
+               max_g);
+    CORE_TELEM("Time to apogee: $y%f#r %s",
+               rep.time_to_apogee,
+               gUNIT_TIME.c_str());
 
     // Prompt for response
     CORE_TELEM("Enter Q to quit, or any other key to rerun");

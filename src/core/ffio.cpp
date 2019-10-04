@@ -1,4 +1,5 @@
 #include <map>
+#include <stdarg.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -98,6 +99,15 @@ namespace {
 
     return size;
   }
+}
+
+void out(char* k_fmt, ...) {
+  va_list k_args;
+  va_start(k_args, k_fmt);
+  char* buf;
+  int r = vasprintf(&buf, k_fmt, k_args);
+  va_end(k_args);
+  out(std::string(buf));
 }
 
 void out(std::string k_data) {

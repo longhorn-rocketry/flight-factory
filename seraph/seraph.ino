@@ -14,10 +14,20 @@
 
 #ifdef FF
   #include <string>
-
   #include "ff_arduino_harness.hpp"
+#endif
 
-  #define TELEM(data) ff::outln(std::string("[#b$mseraph#r] ") + data)
+#ifdef FF
+  #define TELEM(data, ...) {                                                   \
+    ff::out("[#b$mseraph#r] ");                                                \
+    ff::out(data, ##__VA_ARGS__);                                              \
+    ff::out("\n");                                                             \
+  }
+#else
+  #define TELEM(data, ...) {                                                   \
+    Serial.printf(data, ##__VA_ARGS__);                                        \
+    Serial.printf("\n");                                                       \
+  }
 #endif
 
 #include "aimbot.hpp"
@@ -69,6 +79,8 @@ void read_sensors() {
  ******************************************************************************/
 
 void setup() {
+  TELEM("In startup...");
+
   // Clean up previous flights (FF only)
 #ifdef FF
   CLEANUP(g_imu);
@@ -99,7 +111,6 @@ void setup() {
     ff::topen("fcp_temperature");
 
     SIM["airbrake_extension"] = 0.0;
-    TELEM("In startup...");
   #endif
 
   // IMU init
@@ -118,9 +129,7 @@ void setup() {
     new VirtualBarometer();
   #endif
 
-#ifdef FF
   TELEM("#b$g● DAQ GO");
-#endif
 
   // Photic init
 #ifdef FF
@@ -162,9 +171,7 @@ void setup() {
   photic::config(ROCKET_VERTICAL_VELOCITY_HISTORY, &g_hist_vel_z);
   photic::config(ROCKET_ALTITUDE_HISTORY, &g_hist_alt);
 
-#ifdef FF
   TELEM("#b$g● FLIGHT CONTROLLER GO");
-#endif
 
   // State estimator init
   g_estimator = new photic::KalmanFilter();
@@ -187,18 +194,11 @@ void setup() {
     abc_conf
   );
 
-#ifdef FF
   TELEM("#b$g● GNC GO");
-#endif
 
-#ifdef FF
   TELEM("#b$g● TELEMETRY GO#r");
-#endif
 
-#ifdef FF
-  TELEM("Entering wait sequence at t=" + std::to_string(photic::rocket_time())
-        + "...");
-#endif
+  TELEM("Entering wait sequence at t=%f", photic::rocket_time())
 }
 
 /*******************************************************************************
@@ -218,9 +218,7 @@ void loop() {
   // Gate 1 - liftoff
   if (photic::check_for_liftoff()) {
     if (!g_liftoff) {
-    #ifdef FF
-      TELEM("Liftoff detected at t=" + std::to_string(photic::rocket_time()));
-    #endif
+      TELEM("Liftoff detected at t=%f", photic::rocket_time());
     }
 
     g_liftoff = true;
@@ -230,9 +228,7 @@ void loop() {
   // Gate 2 - burnout
   if (photic::check_for_burnout()) {
     if (!g_burnout) {
-    #ifdef FF
-      TELEM("Burnout detected at t=" + std::to_string(photic::rocket_time()));
-    #endif
+      TELEM("Burnout detected at t=%f", photic::rocket_time());
     }
 
     g_burnout = true;
@@ -270,9 +266,7 @@ void loop() {
   // Apogee
   if (photic::check_for_apogee()) {
     if (!g_apogee) {
-    #ifdef FF
-      TELEM("Apogee detected at t=" + std::to_string(photic::rocket_time()));
-    #endif
+      TELEM("Apogee detected at t=%f", photic::rocket_time());
     }
 
     g_apogee = true;
