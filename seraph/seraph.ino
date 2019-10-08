@@ -30,6 +30,12 @@
   }
 #endif
 
+#define KG_PRECOMP_DEPTH 1
+
+#define CURRENT_ALTITUDE g_state[0][0]
+#define CURRENT_VELOCITY g_state[1][0]
+#define CURRENT_ACCEL    g_state[2][0]
+
 #include "aimbot.hpp"
 #include "airflow_deflection_airbrake_model.hpp"
 #include "photic.h"
@@ -106,9 +112,11 @@ void setup() {
 
   // Telemetry streams init (FF only)
   #ifdef FF
-    ff::topen("fcp_accel");
-    ff::topen("fcp_pressure");
-    ff::topen("fcp_temperature");
+    ff::topen("kf_altitude");
+    ff::topen("kf_velocity");
+    ff::topen("kf_accel");
+    ff::topen("brake_ext");
+    ff::topen("kf_alt_err");
 
     SIM["airbrake_extension"] = 0.0;
   #endif
@@ -176,9 +184,10 @@ void setup() {
   // State estimator init
   g_estimator = new photic::KalmanFilter();
   g_estimator->set_delta_t(g_mtr_estimator.get_wavelength());
-  g_estimator->set_sensor_variance(1, 0.25);
-  g_estimator->set_initial_estimate(g_state[0][0], g_state[1][0], g_state[2][0]);
-  g_estimator->compute_kg(100);
+  g_estimator->set_sensor_variance(0.15, 0.25);
+  g_estimator->set_initial_estimate(g_state[0][0], g_state[1][0],
+                                    g_state[2][0]);
+  g_estimator->compute_kg(KG_PRECOMP_DEPTH);
 
   // Aimbot init
   g_cd_model = new aimbot::PlanarCdModel(seraph_vehicle::cdp);
@@ -208,65 +217,60 @@ void setup() {
 void loop() {
   read_sensors();
 
-  // FF telemetry logging
-#ifdef FF
-  ff::tout("fcp_accel", photic::rocket_time(), g_imu->get_acc_z());
-  ff::tout("fcp_pressure", photic::rocket_time(), g_barometer->get_pressure());
-  ff::tout("fcp_temperature", photic::rocket_time(), g_barometer->get_temperature());
-#endif
+  float t_now = photic::rocket_time();
 
-  // Gate 1 - liftoff
+  // Gate 1 - liftoff check
   if (photic::check_for_liftoff()) {
     if (!g_liftoff) {
-      TELEM("Liftoff detected at t=%f", photic::rocket_time());
+      TELEM("Liftoff detected at t=%f", t_now);
     }
 
     g_liftoff = true;
   } else
     return;
 
-  // Gate 2 - burnout
+  // Filter vehicle state
+  float a = g_imu->get_acc_z() * 9.81;
+  if (g_mtr_estimator.poll(t_now)) {
+    g_state = g_estimator->filter(g_barometer->get_altitude(), a);
+
+  #ifdef FF
+    // Log the filtered state
+    ff::tout("kf_altitude", t_now, g_state[0][0]);
+    ff::tout("kf_velocity", t_now, g_state[1][0]);
+    ff::tout("kf_accel", t_now, g_state[2][0]);
+
+    // Log the altitude error
+    aimbot::state_t true_state = SIM.get_rocket_state();
+    float alt_err = true_state.altitude - g_state[0][0];
+    ff::tout("kf_alt_err", t_now, alt_err);
+  #endif
+  }
+
+  // Gate 2 - burnout check
   if (photic::check_for_burnout()) {
     if (!g_burnout) {
-      TELEM("Burnout detected at t=%f", photic::rocket_time());
+      TELEM("Burnout detected at t=%f", t_now);
     }
 
     g_burnout = true;
   } else
     return;
 
-  // Filter state
-  float a = g_imu->get_acc_z() * 9.81;
-  if (g_mtr_estimator.poll(photic::rocket_time())) {
-    g_state = g_estimator->filter(
-      g_barometer->get_altitude(), a
-    );
-
-  #ifdef FF
-    // aimbot::state_t true_state = SIM.get_rocket_state();
-    // float alt_err = true_state.altitude - g_state[0][0];
-    // ff::tout("fcp_alt_err", rocket_time(), alt_err);
-  #endif
-  }
-
-  // Airbrake control
-  aimbot::state_t state = SIM.get_rocket_state();
-  // state.altitude = g_state[0][0];
-  // state.velocity = g_state[1][0];
-
-  aimbot::Engine::step_t moment = g_aimbot->update(
-    photic::rocket_time(), g_rocket, state
-  );
-
+  // Compute a new airbrake control moment
+  aimbot::state_t aimbot_state = {CURRENT_ALTITUDE, CURRENT_VELOCITY};
+  aimbot::Engine::step_t moment = g_aimbot->update(t_now, g_rocket,
+                                                   aimbot_state);
 #ifdef FF
+  // Update virtual airbrake and log its position
   SIM["airbrake_extension"] = moment.extension;
-  // TELEM(std::to_string(moment.extension) + " " + std::to_string(moment.min) + " " + std::to_string(moment.max));
+  ff::tout("brake_ext", t_now, moment.extension);
 #endif
 
-  // Apogee
+  // Apogee check
   if (photic::check_for_apogee()) {
     if (!g_apogee) {
-      TELEM("Apogee detected at t=%f", photic::rocket_time());
+      TELEM("Apogee detected at t=%f", t_now);
     }
 
     g_apogee = true;
