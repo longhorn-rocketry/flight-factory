@@ -12,6 +12,15 @@
 
 #define FF // Use to toggle simulation in Flight Factory
 
+#ifndef FF
+  // STL redefinitions that Arduino can't build without
+  namespace std {
+    void __throw_bad_alloc() {}
+
+    void __throw_length_error(char const *e) {}
+  }
+#endif
+
 #ifdef FF
   #include <string>
   #include "ff_arduino_harness.hpp"
@@ -30,11 +39,16 @@
   }
 #endif
 
-#define KG_PRECOMP_DEPTH 1
+#define KG_PRECOMP_DEPTH 5
+#define KF_IMU_VAR       0.25
+#define KF_BARO_VAR      0.75
 
 #define CURRENT_ALTITUDE g_state[0][0]
 #define CURRENT_VELOCITY g_state[1][0]
 #define CURRENT_ACCEL    g_state[2][0]
+
+#define LAUNCHPAD_ALTITUDE 1293.876
+#define P0_SAMPLE_SIZE 1000
 
 #include "aimbot.hpp"
 #include "airflow_deflection_airbrake_model.hpp"
@@ -42,7 +56,7 @@
 #include "planar_cd_model.hpp"
 #include "seraph_config.h"
 
-const photic::matrix g_INITIAL_STATE(3, 1, 1293.876, 0, 0);
+const photic::matrix g_INITIAL_STATE(3, 1, LAUNCHPAD_ALTITUDE, 0, 0);
 
 photic::Imu* g_imu = nullptr;
 photic::Barometer* g_barometer = nullptr;
@@ -55,6 +69,7 @@ photic::matrix g_state = g_INITIAL_STATE;
 photic::history<float> g_hist_accel_z(10);
 photic::history<float> g_hist_vel_z(10);
 photic::history<float> g_hist_alt(10);
+photic::history<float> g_hist_pressure(10);
 
 aimbot::CdModel* g_cd_model = nullptr;
 aimbot::AirbrakeModel* g_airbrake_model = nullptr;
@@ -64,6 +79,8 @@ aimbot::rocket_t g_rocket = seraph_vehicle::rocket();
 bool g_liftoff = false;
 bool g_burnout = false;
 bool g_apogee = false;
+
+float g_p0;
 
 const float g_AIRFLOW_DEFLECTION_RHO = 0.75;
 
@@ -78,6 +95,7 @@ void read_sensors() {
   g_imu->update();
   g_barometer->update();
   g_hist_accel_z.add(g_imu->get_acc_z());
+  g_hist_pressure.add(g_barometer->get_pressure());
 }
 
 /*******************************************************************************
@@ -112,11 +130,16 @@ void setup() {
 
   // Telemetry streams init (FF only)
   #ifdef FF
+    ff::topen("gt_altitude");
+    ff::topen("gt_velocity");
+    ff::topen("gt_accel");
     ff::topen("kf_altitude");
     ff::topen("kf_velocity");
     ff::topen("kf_accel");
     ff::topen("brake_ext");
     ff::topen("kf_alt_err");
+    ff::topen("hypso_alt");
+    ff::topen("hypso_alt_err");
 
     SIM["airbrake_extension"] = 0.0;
   #endif
@@ -184,7 +207,7 @@ void setup() {
   // State estimator init
   g_estimator = new photic::KalmanFilter();
   g_estimator->set_delta_t(g_mtr_estimator.get_wavelength());
-  g_estimator->set_sensor_variance(0.15, 0.25);
+  g_estimator->set_sensor_variance(KF_BARO_VAR, KF_IMU_VAR);
   g_estimator->set_initial_estimate(g_state[0][0], g_state[1][0],
                                     g_state[2][0]);
   g_estimator->compute_kg(KG_PRECOMP_DEPTH);
@@ -206,6 +229,13 @@ void setup() {
   TELEM("#b$g● GNC GO");
 
   TELEM("#b$g● TELEMETRY GO#r");
+
+  // Sample launchpad pressure
+  for (unsigned int i = 0; i < P0_SAMPLE_SIZE; i++) {
+    read_sensors();
+    g_p0 += g_barometer->get_pressure();
+  }
+  g_p0 /= P0_SAMPLE_SIZE;
 
   TELEM("Entering wait sequence at t=%f", photic::rocket_time())
 }
@@ -230,18 +260,30 @@ void loop() {
     return;
 
   // Filter vehicle state
-  float a = g_imu->get_acc_z() * 9.81;
   if (g_mtr_estimator.poll(t_now)) {
-    g_state = g_estimator->filter(g_barometer->get_altitude(), a);
+    float acceleration = g_imu->get_acc_z() * 9.81;
+    float p_now = g_hist_pressure.mean();
+    float temp = g_barometer->get_temperature();
+    float altitude = LAUNCHPAD_ALTITUDE + photic::hypso(g_p0, p_now, temp);
+    g_state = g_estimator->filter(altitude, acceleration);
 
   #ifdef FF
-    // Log the filtered state
+    aimbot::state_t true_state = SIM.get_rocket_state();
+
+    // Log true state
+    ff::tout("gt_altitude", t_now, true_state.altitude);
+    ff::tout("gt_velocity", t_now, true_state.velocity);
+
+    // Log filtered state
     ff::tout("kf_altitude", t_now, g_state[0][0]);
     ff::tout("kf_velocity", t_now, g_state[1][0]);
     ff::tout("kf_accel", t_now, g_state[2][0]);
 
-    // Log the altitude error
-    aimbot::state_t true_state = SIM.get_rocket_state();
+    // Log hypsometric altitude error
+    ff::tout("hypso_alt", t_now, altitude);
+    ff::tout("hypso_alt_err", t_now, true_state.altitude - altitude);
+
+    // Log filtered altitude error
     float alt_err = true_state.altitude - g_state[0][0];
     ff::tout("kf_alt_err", t_now, alt_err);
   #endif

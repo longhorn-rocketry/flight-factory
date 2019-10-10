@@ -118,8 +118,8 @@ void Dof1Simulator::run(float dt) {
 photic::ImuData Dof1Simulator::get_imu_data() {
   photic::ImuData data;
 
-  data.ax = 0;
-  data.ay = 0;
+  data.ax = 0 + GEN_NOISE(ff::g_ff_config.noise.sensor_accel);
+  data.ay = 0 + GEN_NOISE(ff::g_ff_config.noise.sensor_accel);
   data.az = ACCEL / atmos::gravity_at(0)
             + GEN_NOISE(ff::g_ff_config.noise.sensor_accel);
   data.gx = 0;
@@ -136,7 +136,7 @@ photic::BarometerData Dof1Simulator::get_barometer_data() {
   photic::BarometerData data;
 
   data.altitude = ALTITUDE;
-  data.pressure = atmos::pressure_at(data.altitude)
+  data.pressure = atmos::pressure_at(data.altitude) / 0.10197
                   + GEN_NOISE(ff::g_ff_config.noise.sensor_pressure);
   data.temperature = atmos::temperature_at(data.altitude)
                      + GEN_NOISE(ff::g_ff_config.noise.sensor_temperature);
