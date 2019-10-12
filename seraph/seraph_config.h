@@ -12,7 +12,7 @@ const float g_AIRFLOW_DEFLECTION_RHO = 0.75;
 aimbot::abc_config_t abc_config() {
   aimbot::abc_config_t conf;
 
-  conf.target_altitude = 5000; // 1293.876;
+  conf.target_altitude = 5080; // 1293.876;
 
   conf.bs_profile_velocity_min = 25;
   conf.bs_profile_velocity_max = 300;

@@ -1,7 +1,7 @@
 /**
  * Seraph is a virtual airbrake rocket used for experimental controls testing.
  * Its geometry and specifications are identical to that of Torchy, LRA's SAC
- * 2018 rocket whose wings were so violently clipped.
+ * 2018 rocket whose wings were so tragically clipped.
  *
  * The vehicle is defined across several files:
  *   seraph.ino      - Flight computer logic
@@ -43,6 +43,10 @@
 #define KF_IMU_VAR       0.25
 #define KF_BARO_VAR      0.75
 
+#define AIRFLOW_DEFLECTION_RHO seraph_vehicle::g_AIRFLOW_DEFLECTION_RHO
+#define AIMBOT_EXTRAP_DT       0.01
+#define AIMBOT_TIMEGATE        15
+
 #define CURRENT_ALTITUDE g_state[0][0]
 #define CURRENT_VELOCITY g_state[1][0]
 #define CURRENT_ACCEL    g_state[2][0]
@@ -56,33 +60,52 @@
 #include "planar_cd_model.hpp"
 #include "seraph_config.h"
 
+/**
+ * Inert launchpad state.
+ */
 const photic::matrix g_INITIAL_STATE(3, 1, LAUNCHPAD_ALTITUDE, 0, 0);
 
+/**
+ * Sensors and actuators.
+ */
 photic::Imu* g_imu = nullptr;
 photic::Barometer* g_barometer = nullptr;
 photic::TelemetryHeap *g_heap = nullptr;
 
+/**
+ * State estimation.
+ */
 photic::Metronome g_mtr_estimator(10);
 photic::KalmanFilter* g_estimator;
 photic::matrix g_state = g_INITIAL_STATE;
 
+/**
+ * Telemetry history.
+ */
 photic::history<float> g_hist_accel_z(10);
 photic::history<float> g_hist_vel_z(10);
 photic::history<float> g_hist_alt(10);
 photic::history<float> g_hist_pressure(10);
 
+/**
+ * Airbrake control and flight modeling.
+ */
 aimbot::CdModel* g_cd_model = nullptr;
 aimbot::AirbrakeModel* g_airbrake_model = nullptr;
 aimbot::Engine* g_aimbot = nullptr;
 aimbot::rocket_t g_rocket = seraph_vehicle::rocket();
 
+/**
+ * Flight event flags.
+ */
 bool g_liftoff = false;
 bool g_burnout = false;
 bool g_apogee = false;
 
+/**
+ * Launchpad pressure sampled during startup.
+ */
 float g_p0;
-
-const float g_AIRFLOW_DEFLECTION_RHO = 0.75;
 
 /*******************************************************************************
  * SUPPORTING FUNCTIONS
@@ -208,21 +231,22 @@ void setup() {
   g_estimator = new photic::KalmanFilter();
   g_estimator->set_delta_t(g_mtr_estimator.get_wavelength());
   g_estimator->set_sensor_variance(KF_BARO_VAR, KF_IMU_VAR);
-  g_estimator->set_initial_estimate(g_state[0][0], g_state[1][0],
-                                    g_state[2][0]);
+  g_estimator->set_initial_estimate(
+    g_state[0][0], g_state[1][0], g_state[2][0]
+  );
   g_estimator->compute_kg(KG_PRECOMP_DEPTH);
 
   // Aimbot init
   g_cd_model = new aimbot::PlanarCdModel(seraph_vehicle::cdp);
   g_airbrake_model = new aimbot::AirflowDeflectionAirbrakeModel(
-    g_cd_model, g_AIRFLOW_DEFLECTION_RHO
+    g_cd_model, AIRFLOW_DEFLECTION_RHO
   );
   aimbot::abc_config_t abc_conf = seraph_vehicle::abc_config();
   g_aimbot = new aimbot::Engine(
     g_cd_model,
     g_airbrake_model,
     aimbot::Engine::EXTRAP_EULER,
-    0.01,
+    AIMBOT_EXTRAP_DT,
     abc_conf
   );
 
@@ -301,12 +325,14 @@ void loop() {
 
   // Compute a new airbrake control moment
   aimbot::state_t aimbot_state = {CURRENT_ALTITUDE, CURRENT_VELOCITY};
-  aimbot::Engine::step_t moment = g_aimbot->update(t_now, g_rocket,
-                                                   aimbot_state);
+  aimbot::Engine::step_t moment = g_aimbot->update(
+    t_now, g_rocket, aimbot_state
+  );
 #ifdef FF
   // Update virtual airbrake and log its position
-  SIM["airbrake_extension"] = moment.extension;
-  ff::tout("brake_ext", t_now, moment.extension);
+  if (photic::rocket_time() > AIMBOT_TIMEGATE)
+    SIM["airbrake_extension"] = moment.extension;
+  ff::tout("brake_ext", t_now, SIM["airbrake_extension"]);
 #endif
 
   // Apogee check
