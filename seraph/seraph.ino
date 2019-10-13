@@ -1,6 +1,4 @@
 /**
- * SERAPH
- *
  * Seraph is a virtual airbrake rocket used for experimental controls testing.
  * Its geometry and specifications are identical to that of Torchy, LRA's SAC
  * 2018 rocket whose wings were so tragically clipped.
@@ -47,7 +45,7 @@
 
 #define AIRFLOW_DEFLECTION_RHO seraph_vehicle::g_AIRFLOW_DEFLECTION_RHO
 #define AIMBOT_EXTRAP_DT       0.01
-#define AIMBOT_TIMEGATE        15
+#define AIMBOT_TIMEGATE        10
 
 #define CURRENT_ALTITUDE       g_state[0][0]
 #define CURRENT_VELOCITY       g_state[1][0]
@@ -61,6 +59,10 @@
 #include "photic.h"
 #include "planar_cd_model.hpp"
 #include "seraph_config.h"
+
+/*******************************************************************************
+ * GLOBALS
+ ******************************************************************************/
 
 /**
  * Inert launchpad state.
@@ -146,29 +148,31 @@ void setup() {
   g_apogee = false;
 
   g_mtr_estimator.reset();
+  g_mtr_airbrake.reset();
 
   g_hist_accel_z.clear();
   g_hist_vel_z.clear();
   g_hist_alt.clear();
+  g_hist_pressure.clear();
 
   g_state = g_INITIAL_STATE;
 #endif
 
-  // Telemetry streams init (FF only)
-  #ifdef FF
-    ff::topen("gt_altitude");
-    ff::topen("gt_velocity");
-    ff::topen("gt_accel");
-    ff::topen("kf_altitude");
-    ff::topen("kf_velocity");
-    ff::topen("kf_accel");
-    ff::topen("brake_ext");
-    ff::topen("kf_alt_err");
-    ff::topen("hypso_alt");
-    ff::topen("hypso_alt_err");
+// Telemetry streams init (FF only)
+#ifdef FF
+  ff::topen("gt_altitude");
+  ff::topen("gt_velocity");
+  ff::topen("gt_accel");
+  ff::topen("kf_altitude");
+  ff::topen("kf_velocity");
+  ff::topen("kf_accel");
+  ff::topen("brake_ext");
+  ff::topen("kf_alt_err");
+  ff::topen("hypso_alt");
+  ff::topen("hypso_alt_err");
 
-    SIM["airbrake_extension"] = 0.0;
-  #endif
+  SIM["airbrake_extension"] = 0.0;
+#endif
 
   // IMU init
   g_imu =
@@ -272,21 +276,23 @@ void setup() {
  ******************************************************************************/
 
 void loop() {
-  // Fetch new sensor readings and retrieve flight time
+  // Fetch new sensor readings
   read_sensors();
-  float t_now = photic::rocket_time();
 
   // GATE 1 - LIFTOFF CHECK. The majority of loop logic is gated by engine
   // ignition. Code preceding this statement will run while the rocket is inert
   // on the launchpad.
   if (photic::check_for_liftoff()) {
     if (!g_liftoff) {
-      TELEM("Liftoff detected at t=%f", t_now);
+      TELEM("Liftoff detected at t=%f", photic::rocket_time());
     }
 
     g_liftoff = true;
   } else
     return;
+
+  // Get current mission time
+  float t_now = photic::flight_time();
 
   // STATE ESTIMATION. An acceleration reading is sampled from the IMU and an
   // altitude estimate is made by applying the hypsometric formula to the
@@ -341,7 +347,8 @@ void loop() {
   // however, the airbrakes do not move. This is to prevent misinformed braking
   // while the state estimator recovers from the large error accumulated during
   // powered flight.
-  if (!g_apogee && photic::rocket_time() > AIMBOT_TIMEGATE &&
+  if (!g_apogee &&
+      t_now - photic::burnout_time() > AIMBOT_TIMEGATE &&
       g_mtr_airbrake.poll(t_now))
   {
     // Compute a new airbrake position
