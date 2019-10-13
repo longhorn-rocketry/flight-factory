@@ -1,4 +1,6 @@
 /**
+ * SERAPH
+ *
  * Seraph is a virtual airbrake rocket used for experimental controls testing.
  * Its geometry and specifications are identical to that of Torchy, LRA's SAC
  * 2018 rocket whose wings were so tragically clipped.
@@ -39,20 +41,20 @@
   }
 #endif
 
-#define KG_PRECOMP_DEPTH 5
-#define KF_IMU_VAR       0.25
-#define KF_BARO_VAR      0.75
+#define KG_PRECOMP_DEPTH       5
+#define KF_IMU_VAR             0.25
+#define KF_BARO_VAR            0.75
 
 #define AIRFLOW_DEFLECTION_RHO seraph_vehicle::g_AIRFLOW_DEFLECTION_RHO
 #define AIMBOT_EXTRAP_DT       0.01
 #define AIMBOT_TIMEGATE        15
 
-#define CURRENT_ALTITUDE g_state[0][0]
-#define CURRENT_VELOCITY g_state[1][0]
-#define CURRENT_ACCEL    g_state[2][0]
+#define CURRENT_ALTITUDE       g_state[0][0]
+#define CURRENT_VELOCITY       g_state[1][0]
+#define CURRENT_ACCEL          g_state[2][0]
 
-#define LAUNCHPAD_ALTITUDE 1293.876
-#define P0_SAMPLE_SIZE 1000
+#define LAUNCHPAD_ALTITUDE     1293.876
+#define P0_SAMPLE_SIZE         1000
 
 #include "aimbot.hpp"
 #include "airflow_deflection_airbrake_model.hpp"
@@ -90,6 +92,7 @@ photic::history<float> g_hist_pressure(10);
 /**
  * Airbrake control and flight modeling.
  */
+photic::Metronome g_mtr_airbrake(10);
 aimbot::CdModel* g_cd_model = nullptr;
 aimbot::AirbrakeModel* g_airbrake_model = nullptr;
 aimbot::Engine* g_aimbot = nullptr;
@@ -269,11 +272,13 @@ void setup() {
  ******************************************************************************/
 
 void loop() {
+  // Fetch new sensor readings and retrieve flight time
   read_sensors();
-
   float t_now = photic::rocket_time();
 
-  // Gate 1 - liftoff check
+  // GATE 1 - LIFTOFF CHECK. The majority of loop logic is gated by engine
+  // ignition. Code preceding this statement will run while the rocket is inert
+  // on the launchpad.
   if (photic::check_for_liftoff()) {
     if (!g_liftoff) {
       TELEM("Liftoff detected at t=%f", t_now);
@@ -283,18 +288,25 @@ void loop() {
   } else
     return;
 
-  // Filter vehicle state
+  // STATE ESTIMATION. An acceleration reading is sampled from the IMU and an
+  // altitude estimate is made by applying the hypsometric formula to the
+  // barometer's recorded temperature and a rolling average of its pressure.
+  // These observations enter the Kalman filter and produce a refined estimate
+  // of the rocket's state that is used for airbrake control.
   if (g_mtr_estimator.poll(t_now)) {
-    float acceleration = g_imu->get_acc_z() * 9.81;
+    float vertical_accel = g_imu->get_acc_z() * 9.81;
     float p_now = g_hist_pressure.mean();
     float temp = g_barometer->get_temperature();
-    float altitude = LAUNCHPAD_ALTITUDE + photic::hypso(g_p0, p_now, temp);
-    g_state = g_estimator->filter(altitude, acceleration);
+    // Note that we add in the launchpad altitude because we need our world
+    // position relative to sea level for purposes of atmosphere modeling,
+    // whereas the hypsometric formula produces a position relative to ground
+    // level.
+    float world_alt = LAUNCHPAD_ALTITUDE + photic::hypso(g_p0, p_now, temp);
+    g_state = g_estimator->filter(world_alt, vertical_accel);
 
   #ifdef FF
-    aimbot::state_t true_state = SIM.get_rocket_state();
-
     // Log true state
+    aimbot::state_t true_state = SIM.get_rocket_state();
     ff::tout("gt_altitude", t_now, true_state.altitude);
     ff::tout("gt_velocity", t_now, true_state.velocity);
 
@@ -303,17 +315,18 @@ void loop() {
     ff::tout("kf_velocity", t_now, g_state[1][0]);
     ff::tout("kf_accel", t_now, g_state[2][0]);
 
-    // Log hypsometric altitude error
-    ff::tout("hypso_alt", t_now, altitude);
-    ff::tout("hypso_alt_err", t_now, true_state.altitude - altitude);
+    // Log error in the hypsometric altitude estimate
+    ff::tout("hypso_alt", t_now, world_alt);
+    ff::tout("hypso_alt_err", t_now, true_state.altitude - world_alt);
 
-    // Log filtered altitude error
+    // Log error in the Kalman filter's altitude estimate
     float alt_err = true_state.altitude - g_state[0][0];
     ff::tout("kf_alt_err", t_now, alt_err);
   #endif
   }
 
-  // Gate 2 - burnout check
+  // GATE 2 - BURNOUT CHECK. For reasons of stability, we prevent the airbrake
+  // from activating during powered flight.
   if (photic::check_for_burnout()) {
     if (!g_burnout) {
       TELEM("Burnout detected at t=%f", t_now);
@@ -323,22 +336,38 @@ void loop() {
   } else
     return;
 
-  // Compute a new airbrake control moment
-  aimbot::state_t aimbot_state = {CURRENT_ALTITUDE, CURRENT_VELOCITY};
-  aimbot::Engine::step_t moment = g_aimbot->update(
-    t_now, g_rocket, aimbot_state
-  );
-#ifdef FF
-  // Update virtual airbrake and log its position
-  if (photic::rocket_time() > AIMBOT_TIMEGATE)
+  // AIRBRAKE CONTROL. While cruising, the active airbraking works to guide the
+  // rocket to the target altitude. Until AIMBOT_TIMEGATE seconds after liftoff,
+  // however, the airbrakes do not move. This is to prevent misinformed braking
+  // while the state estimator recovers from the large error accumulated during
+  // powered flight.
+  if (!g_apogee && photic::rocket_time() > AIMBOT_TIMEGATE &&
+      g_mtr_airbrake.poll(t_now))
+  {
+    // Compute a new airbrake position
+    aimbot::state_t aimbot_state = {CURRENT_ALTITUDE, CURRENT_VELOCITY};
+    aimbot::Engine::step_t moment = g_aimbot->update(
+      t_now, g_rocket, aimbot_state
+    );
+  #ifdef FF
+    // Update virtual airbrake position
     SIM["airbrake_extension"] = moment.extension;
+  #endif
+  }
+
+#ifdef FF
+  // Log airbrake position
   ff::tout("brake_ext", t_now, SIM["airbrake_extension"]);
 #endif
 
-  // Apogee check
+  // GATE 3 - APOGEE CHECK.
   if (photic::check_for_apogee()) {
     if (!g_apogee) {
       TELEM("Apogee detected at t=%f", t_now);
+      // Retract airbrakes
+    #ifdef FF
+      SIM["airbrake_extension"] = 0;
+    #endif
     }
 
     g_apogee = true;
